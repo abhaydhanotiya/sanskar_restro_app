@@ -226,7 +226,7 @@ export const TableDetailView: React.FC<TableDetailViewProps> = ({ table, onBack 
                         })()}
                         {groupedItem.modifications && (
                             <p className="text-xs text-peach-dark font-medium italic mt-1">
-                                "{groupedItem.modifications}"
+                                &quot;{groupedItem.modifications}&quot;
                             </p>
                         )}
                     </div>
