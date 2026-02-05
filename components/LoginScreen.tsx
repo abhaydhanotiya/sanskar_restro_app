@@ -105,7 +105,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         {/* Note */}
         <div className="text-center">
             <p className="text-xs text-stone-400 flex items-center justify-center gap-1">
-                <ShieldCheck size={12} /> For Owner Access: Use 'admin' / 'admin123'
+                <ShieldCheck size={12} /> For Owner Access: Use &apos;admin&apos; / &apos;admin123&apos;
             </p>
         </div>
 

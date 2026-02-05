@@ -48,7 +48,7 @@ export const KitchenTab: React.FC = () => {
             </div>
             <div>
                 <h2 className="text-xl font-bold text-brown-dark">{t('statusPreparing')}</h2>
-                <p className="text-xs text-stone-500 font-medium">Chef's Queue</p>
+                <p className="text-xs text-stone-500 font-medium">Chef&apos;s Queue</p>
             </div>
         </div>
 
