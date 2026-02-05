@@ -1,0 +1,91 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
+async function main() {
+    console.log('🌱 Starting database seed...');
+    // Clear existing data
+    await prisma.attendanceRecord.deleteMany();
+    await prisma.orderItem.deleteMany();
+    await prisma.transaction.deleteMany();
+    await prisma.staffMember.deleteMany();
+    await prisma.menuItem.deleteMany();
+    await prisma.table.deleteMany();
+    console.log('✅ Cleared existing data');
+    // Seed Menu Items
+    const menuItems = await prisma.menuItem.createMany({
+        data: [
+            { id: 1, name: "Butter Chicken", category: "Entrees", price: 18.00, available: true, description: "Classic tomato butter sauce." },
+            { id: 2, name: "Garlic Naan", category: "Sides", price: 4.50, available: true, description: "Freshly baked in tandoor." },
+            { id: 3, name: "Paneer Tikka", category: "Appetizers", price: 12.00, available: true, description: "Grilled cottage cheese cubes." },
+            { id: 4, name: "Mango Lassi", category: "Drinks", price: 5.00, available: true, description: "Sweet yogurt drink." },
+            { id: 5, name: "Lamb Rogan Josh", category: "Entrees", price: 20.00, available: false, description: "Slow cooked lamb curry." },
+            { id: 6, name: "Vegetable Samosa", category: "Appetizers", price: 6.00, available: true, description: "Crispy pastry with potatoes." },
+            { id: 7, name: "Dal Makhani", category: "Entrees", price: 15.00, available: true, description: "Creamy black lentils." },
+            { id: 8, name: "Masala Chai", category: "Drinks", price: 3.50, available: true, description: "Spiced Indian tea." },
+        ],
+    });
+    console.log(`✅ Created ${menuItems.count} menu items`);
+    // Seed Tables
+    const tables = await prisma.table.createMany({
+        data: [
+            { id: 1, capacity: 4, status: 'OCCUPIED', guests: 3, startTime: new Date('2024-01-01T18:30:00') },
+            { id: 2, capacity: 2, status: 'EMPTY' },
+            { id: 3, capacity: 6, status: 'NEEDS_SERVICE', guests: 5, startTime: new Date('2024-01-01T19:00:00') },
+            { id: 4, capacity: 4, status: 'NEEDS_BILL', guests: 2, startTime: new Date('2024-01-01T18:15:00') },
+            { id: 5, capacity: 2, status: 'EMPTY' },
+            { id: 6, capacity: 8, status: 'OCCUPIED', guests: 7, startTime: new Date('2024-01-01T19:10:00') },
+            { id: 7, capacity: 4, status: 'EMPTY' },
+            { id: 8, capacity: 4, status: 'NEEDS_SERVICE', guests: 4, startTime: new Date('2024-01-01T18:45:00') },
+        ],
+    });
+    console.log(`✅ Created ${tables.count} tables`);
+    // Seed Order Items for Table 1
+    await prisma.orderItem.createMany({
+        data: [
+            { id: 101, tableId: 1, menuId: 1, name: "Butter Chicken", price: 18.00, quantity: 2, status: 'SERVED', modifications: "Spicy" },
+            { id: 102, tableId: 1, menuId: 2, name: "Garlic Naan", price: 4.50, quantity: 3, status: 'SERVED' },
+            { id: 103, tableId: 1, menuId: 4, name: "Mango Lassi", price: 5.00, quantity: 3, status: 'PREPARING' },
+            { id: 104, tableId: 1, menuId: 1, name: "Extra Rice", price: 3.00, quantity: 1, status: 'VOID', modifications: "Customer changed mind" },
+        ],
+    });
+    // Seed Order Items for Table 6
+    await prisma.orderItem.createMany({
+        data: [
+            { id: 201, tableId: 6, menuId: 6, name: "Vegetable Samosa", price: 6.00, quantity: 4, status: 'PREPARING' },
+            { id: 202, tableId: 6, menuId: 8, name: "Masala Chai", price: 3.50, quantity: 7, status: 'PREPARING', modifications: "Less sugar" },
+        ],
+    });
+    console.log('✅ Created order items');
+    // Seed Staff Members
+    const staff = await prisma.staffMember.createMany({
+        data: [
+            { id: 1, name: "Rahul Kumar", role: "Waiter", avatar: "👨‍🍳" },
+            { id: 2, name: "Priya Sharma", role: "Waitress", avatar: "👩‍🍳" },
+            { id: 3, name: "Amit Patel", role: "Chef", avatar: "👨‍🍳" },
+            { id: 4, name: "Neha Singh", role: "Manager", avatar: "👩‍💼" },
+        ],
+    });
+    console.log(`✅ Created ${staff.count} staff members`);
+    // Seed Attendance Records
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    await prisma.attendanceRecord.createMany({
+        data: [
+            { staffId: 1, date: today, status: 'PRESENT', checkIn: new Date('2024-01-01T09:00:00'), checkOut: new Date('2024-01-01T17:00:00') },
+            { staffId: 2, date: today, status: 'PRESENT', checkIn: new Date('2024-01-01T09:15:00') },
+            { staffId: 3, date: today, status: 'LATE', checkIn: new Date('2024-01-01T10:30:00') },
+            { staffId: 4, date: today, status: 'ABSENT' },
+        ],
+    });
+    console.log('✅ Created attendance records');
+    console.log('🎉 Database seeding completed!');
+}
+main()
+    .catch((e) => {
+    console.error('❌ Error seeding database:', e);
+    process.exit(1);
+})
+    .finally(async () => {
+    await prisma.$disconnect();
+});

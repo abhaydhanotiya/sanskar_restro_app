@@ -1,0 +1,479 @@
+'use client';
+
+import React, { useState } from 'react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
+import { LayoutDashboard, Users, History, TrendingUp, IndianRupee, ShoppingBag, LogOut, CalendarCheck, AlertCircle, Search, Filter, X, ChevronDown, FileText, Receipt, Calendar } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useTables } from '@/contexts/TablesContext';
+import { useOwnerData } from '@/hooks/useOwnerData';
+import { OrderItem, OrderStatus, Transaction } from '@/types';
+
+interface OwnerDashboardProps {
+  userName: string;
+  onLogout: () => void;
+}
+
+export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, onLogout }) => {
+  const { t } = useLanguage();
+  const { history } = useTables();
+    const { staff, attendance, transactions } = useOwnerData();
+  const [activeTab, setActiveTab] = useState<'overview' | 'staff' | 'history'>('overview');
+
+    const toDate = (value: string | Date | null | undefined) => {
+        if (!value) return null;
+        const date = value instanceof Date ? value : new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    const isSameDay = (a: Date | null, b: Date) => {
+        if (!a) return false;
+        return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    };
+
+    const formatTime = (value: string | Date | null | undefined) => {
+        const date = toDate(value);
+        return date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+    };
+
+    const formatDateLabel = (value: string | Date | null | undefined) => {
+        const date = toDate(value);
+        if (!date) return '';
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(today.getDate() - 1);
+        if (isSameDay(date, today)) return 'Today';
+        if (isSameDay(date, yesterday)) return 'Yesterday';
+        return date.toLocaleDateString();
+    };
+
+  // --- Calculations for Overview ---
+    const transactionsToUse = transactions.length ? transactions : history;
+    const totalSales = transactionsToUse.reduce((sum, txn) => sum + txn.totalAmount, 0);
+    const totalOrders = transactionsToUse.length;
+  const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+    const chartData = (() => {
+        const now = new Date();
+        const hours = Array.from({ length: 7 }, (_, idx) => {
+            const d = new Date(now);
+            d.setHours(now.getHours() - (6 - idx), 0, 0, 0);
+            return d;
+        });
+
+        const totals = new Map<number, number>();
+        transactionsToUse.forEach(txn => {
+            const txnDate = toDate(txn.timestamp);
+            if (!txnDate || !isSameDay(txnDate, now)) return;
+            const hourKey = txnDate.getHours();
+            totals.set(hourKey, (totals.get(hourKey) ?? 0) + txn.totalAmount);
+        });
+
+        return hours.map(h => ({
+            name: h.toLocaleTimeString([], { hour: 'numeric' }),
+            sales: totals.get(h.getHours()) ?? 0,
+        }));
+    })();
+
+  // --- Sub-components ---
+
+  const OverviewTab = () => (
+    <div className="space-y-6 animate-fade-in">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex items-center justify-between">
+            <div>
+                <p className="text-stone-500 text-sm font-medium">{t('totalSales')}</p>
+                <h3 className="text-3xl font-bold text-brown-dark mt-1">₹{totalSales.toFixed(0)}</h3>
+            </div>
+            <div className="bg-green-100 p-3 rounded-xl text-green-700">
+                <IndianRupee size={24} />
+            </div>
+        </div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex items-center justify-between">
+            <div>
+                <p className="text-stone-500 text-sm font-medium">{t('todayOrders')}</p>
+                <h3 className="text-3xl font-bold text-brown-dark mt-1">{totalOrders}</h3>
+            </div>
+            <div className="bg-peach/20 p-3 rounded-xl text-peach-dark">
+                <ShoppingBag size={24} />
+            </div>
+        </div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex items-center justify-between">
+            <div>
+                <p className="text-stone-500 text-sm font-medium">{t('avgOrderValue')}</p>
+                <h3 className="text-3xl font-bold text-brown-dark mt-1">₹{avgOrderValue.toFixed(0)}</h3>
+            </div>
+            <div className="bg-blue-100 p-3 rounded-xl text-blue-700">
+                <TrendingUp size={24} />
+            </div>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 h-80">
+        <h4 className="font-bold text-brown-dark mb-6">Sales Trend (Today)</h4>
+        <ResponsiveContainer width="100%" height="85%">
+            <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#a8a29e', fontSize: 12}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#a8a29e', fontSize: 12}} tickFormatter={(val) => `₹${val}`} />
+                <Tooltip 
+                    cursor={{fill: 'transparent'}}
+                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)'}}
+                />
+                <Bar dataKey="sales" radius={[6, 6, 0, 0]}>
+                    {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill="#5D4037" fillOpacity={0.8} />
+                    ))}
+                </Bar>
+            </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+
+  const StaffTab = () => {
+    const [view, setView] = useState<'today' | 'log'>('today');
+    const [filterStaff, setFilterStaff] = useState('All');
+    const [filterTime, setFilterTime] = useState('All');
+
+    const filteredLogs = attendance.filter(record => {
+        const staffMatch = filterStaff === 'All' || record.staffId.toString() === filterStaff;
+        const timeMatch = filterTime === 'All' || formatDateLabel(record.date) === filterTime;
+        return staffMatch && timeMatch;
+    });
+
+    const dateOptions = Array.from(new Set(attendance.map(r => formatDateLabel(r.date)).filter(Boolean)));
+
+    return (
+        <div className="space-y-4 animate-fade-in">
+            <div className="flex bg-white p-1 rounded-xl border border-stone-200 w-fit">
+                <button 
+                  onClick={() => setView('today')}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${view === 'today' ? 'bg-brown text-white' : 'text-stone-500 hover:bg-stone-50'}`}
+                >
+                    {t('today')}
+                </button>
+                <button 
+                  onClick={() => setView('log')}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${view === 'log' ? 'bg-brown text-white' : 'text-stone-500 hover:bg-stone-50'}`}
+                >
+                    {t('attendanceLog')}
+                </button>
+            </div>
+
+            {view === 'today' ? (
+                <div className="grid gap-4">
+                    {staff.map(staffMember => {
+                        const record = attendance.find(r => r.staffId === staffMember.id && isSameDay(toDate(r.date), new Date()));
+                        const status = record?.status || 'ABSENT';
+                        
+                        let statusColor = '';
+                        let statusIcon = null;
+
+                        switch(status) {
+                            case 'PRESENT': 
+                                statusColor = 'bg-green-100 text-green-700 border-green-200'; 
+                                statusIcon = <CalendarCheck size={16} />;
+                                break;
+                            case 'LATE':
+                                statusColor = 'bg-amber-100 text-amber-700 border-amber-200';
+                                statusIcon = <AlertCircle size={16} />;
+                                break;
+                            case 'LEAVE':
+                                statusColor = 'bg-blue-100 text-blue-700 border-blue-200';
+                                break;
+                            default:
+                                statusColor = 'bg-red-50 text-red-500 border-red-100';
+                        }
+
+                        return (
+                            <div key={staffMember.id} className="bg-white p-4 rounded-xl shadow-sm border border-stone-100 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-brown text-white flex items-center justify-center font-bold text-lg">
+                                        {staffMember.avatar}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-brown-dark">{staffMember.name}</h4>
+                                        <p className="text-xs text-stone-500">{staffMember.role}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${statusColor} mb-1`}>
+                                        {statusIcon}
+                                        {t(status.toLowerCase() as any)}
+                                    </div>
+                                    {record?.checkIn && (
+                                        <p className="text-xs text-stone-400 font-mono">In: {formatTime(record.checkIn)}</p>
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            ) : (
+                <div className="space-y-4 animate-fade-in">
+                    {/* Filters for Log View */}
+                    <div className="flex gap-3">
+                        <div className="relative flex-1">
+                            <select 
+                                value={filterStaff}
+                                onChange={(e) => setFilterStaff(e.target.value)}
+                                className="w-full appearance-none bg-white border border-stone-200 rounded-xl py-2.5 pl-4 pr-8 text-sm font-medium text-brown-dark focus:outline-none"
+                            >
+                                <option value="All">All Staff</option>
+                                {staff.map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-stone-500" />
+                        </div>
+                        <div className="relative flex-1">
+                            <select 
+                                value={filterTime}
+                                onChange={(e) => setFilterTime(e.target.value)}
+                                className="w-full appearance-none bg-white border border-stone-200 rounded-xl py-2.5 pl-4 pr-8 text-sm font-medium text-brown-dark focus:outline-none"
+                            >
+                                <option value="All">All Dates</option>
+                                {dateOptions.map(option => (
+                                    <option key={option} value={option}>{option}</option>
+                                ))}
+                            </select>
+                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-stone-500" />
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-stone-50 text-stone-500 border-b border-stone-100">
+                                <tr>
+                                    <th className="p-4 font-semibold">{t('staff')}</th>
+                                    <th className="p-4 font-semibold">Date</th>
+                                    <th className="p-4 font-semibold">Status</th>
+                                    <th className="p-4 font-semibold">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-stone-100">
+                                {filteredLogs.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="p-8 text-center text-stone-400">
+                                            No records found for selected filters.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredLogs.map((record, index) => {
+                                        const staffMember = staff.find(s => s.id === record.staffId);
+                                        if (!staffMember) return null;
+                                        return (
+                                            <tr key={index} className="hover:bg-stone-50">
+                                                <td className="p-4 font-medium text-brown-dark flex items-center gap-2">
+                                                    <div className="w-6 h-6 rounded-full bg-brown/10 text-brown text-xs flex items-center justify-center font-bold">
+                                                        {staffMember.avatar}
+                                                    </div>
+                                                    {staffMember.name}
+                                                </td>
+                                                <td className="p-4 text-stone-500">{formatDateLabel(record.date)}</td>
+                                                <td className="p-4">
+                                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${
+                                                        record.status === 'PRESENT' ? 'bg-green-100 text-green-700' :
+                                                        record.status === 'LATE' ? 'bg-amber-100 text-amber-700' :
+                                                        record.status === 'LEAVE' ? 'bg-blue-100 text-blue-700' :
+                                                        'bg-red-50 text-red-500'
+                                                    }`}>
+                                                        {record.status}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 text-stone-500 font-mono text-xs">
+                                                    {record.checkIn ? `${formatTime(record.checkIn)}${record.checkOut ? ` - ${formatTime(record.checkOut)}` : ''}` : '-'}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+  };
+
+  const HistoryTab = () => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterDate, setFilterDate] = useState('All');
+    const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
+
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const filteredHistory = history.filter(txn => {
+        const matchesSearch = 
+            txn.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+            txn.items.some(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        const txnDate = toDate(txn.timestamp);
+        const matchesDate = filterDate === 'All' ||
+            (filterDate === 'Today' && isSameDay(txnDate, today)) ||
+            (filterDate === 'Yesterday' && isSameDay(txnDate, yesterday));
+
+        return matchesSearch && matchesDate;
+    });
+
+    return (
+        <div className="space-y-4 animate-fade-in">
+            {/* Filters */}
+            <div className="flex gap-2">
+                <div className="flex-1 relative">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"/>
+                    <input 
+                        type="text" 
+                        placeholder={t('searchTxn')}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-white border border-stone-200 rounded-xl py-2.5 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-peach/50"
+                    />
+                </div>
+                <div className="relative">
+                    <select 
+                        className="appearance-none bg-white border border-stone-200 rounded-xl py-2.5 pl-4 pr-8 text-sm font-medium text-brown-dark focus:outline-none"
+                        value={filterDate}
+                        onChange={(e) => setFilterDate(e.target.value)}
+                    >
+                        <option value="All">{t('allTime')}</option>
+                        <option value="Today">{t('today')}</option>
+                        <option value="Yesterday">{t('yesterday')}</option>
+                    </select>
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-stone-500" />
+                </div>
+            </div>
+
+            {/* List */}
+            <div className="space-y-3">
+                {filteredHistory.length === 0 ? (
+                    <div className="text-center py-20 text-stone-400 flex flex-col items-center">
+                        <FileText size={40} className="mb-2 opacity-50" />
+                        No transactions found matching your filters.
+                    </div>
+                ) : (
+                    filteredHistory.map((txn) => (
+                        <div 
+                            key={txn.id} 
+                            onClick={() => setSelectedTxn(txn)}
+                            className="bg-white p-4 rounded-xl shadow-sm border border-stone-100 flex justify-between items-center cursor-pointer hover:bg-stone-50 active:scale-[0.99] transition-all"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className={`p-2.5 rounded-lg ${txn.isTakeaway ? 'bg-peach/10 text-peach-dark' : 'bg-brown/10 text-brown'}`}>
+                                    {txn.isTakeaway ? <ShoppingBag size={20} /> : <History size={20} />}
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-brown-dark text-sm">
+                                        {txn.isTakeaway ? 'Takeaway' : 'Table'} #{txn.tableId}
+                                    </h4>
+                                    <div className="text-xs text-stone-400 flex flex-col gap-0.5 mt-0.5">
+                                        <span className="font-mono">{txn.id}</span>
+                                        <span className="flex items-center gap-1"><Calendar size={10}/> {toDate(txn.timestamp)?.toLocaleString() ?? '-'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <div className="font-bold text-brown text-lg">₹{txn.totalAmount.toFixed(2)}</div>
+                                <div className="text-xs text-stone-400">{txn.items.length} items</div>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Detail Modal */}
+            {selectedTxn && (
+                <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden animate-slide-up shadow-2xl flex flex-col max-h-[80vh]">
+                    <div className="p-4 bg-brown text-white flex justify-between items-center shrink-0">
+                        <div>
+                            <h3 className="font-bold">{t('orderDetails')}</h3>
+                            <p className="text-xs opacity-80">{selectedTxn.id}</p>
+                        </div>
+                        <button onClick={() => setSelectedTxn(null)}><X size={20}/></button>
+                    </div>
+                    <div className="p-4 overflow-y-auto">
+                        <div className="space-y-3">
+                            {selectedTxn.items.map(item => (
+                            <div key={item.id} className="flex justify-between items-center p-3 rounded-lg border bg-stone-50 border-stone-100">
+                                <div className="flex items-center gap-3">
+                                    <div className="font-bold text-brown-dark w-6 h-6 bg-white rounded flex items-center justify-center shadow-sm text-sm border border-stone-200">
+                                        {item.quantity}
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-stone-800">{item.name}</p>
+                                        <p className="text-[10px] text-stone-400 uppercase tracking-wide">{item.status}</p>
+                                    </div>
+                                </div>
+                                <span className="font-bold text-brown">₹{(item.price * item.quantity).toFixed(2)}</span>
+                            </div>
+                            ))}
+                        </div>
+                        <div className="mt-6 border-t border-dashed border-stone-300 pt-4 flex justify-between items-center">
+                            <span className="font-bold text-lg text-stone-600">Total Paid</span>
+                            <span className="font-black text-2xl text-brown-dark">₹{selectedTxn.totalAmount.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div className="p-4 border-t border-stone-100">
+                        <button onClick={() => setSelectedTxn(null)} className="w-full py-3 bg-stone-100 text-stone-600 font-bold rounded-xl hover:bg-stone-200">
+                            {t('close')}
+                        </button>
+                    </div>
+                </div>
+                </div>
+            )}
+        </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-stone-50 text-brown-dark font-sans pb-20">
+      {/* Owner Header */}
+      <header className="bg-brown-dark text-white p-6 rounded-b-3xl shadow-lg mb-6 sticky top-0 z-50">
+        <div className="flex justify-between items-center mb-6">
+            <div>
+                <h1 className="text-2xl font-bold">{t('ownerDashboard')}</h1>
+                <p className="text-white/60 text-sm">Welcome, {userName}</p>
+            </div>
+            <button onClick={onLogout} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors">
+                <LogOut size={20} />
+            </button>
+        </div>
+        
+        {/* Navigation Tabs within Header */}
+        <div className="flex gap-4">
+            <button 
+                onClick={() => setActiveTab('overview')}
+                className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'overview' ? 'bg-peach text-brown-dark' : 'bg-white/10 text-white hover:bg-white/20'}`}
+            >
+                {t('overview')}
+            </button>
+            <button 
+                onClick={() => setActiveTab('staff')}
+                className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'staff' ? 'bg-peach text-brown-dark' : 'bg-white/10 text-white hover:bg-white/20'}`}
+            >
+                {t('staff')}
+            </button>
+            <button 
+                onClick={() => setActiveTab('history')}
+                className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'history' ? 'bg-peach text-brown-dark' : 'bg-white/10 text-white hover:bg-white/20'}`}
+            >
+                {t('history')}
+            </button>
+        </div>
+      </header>
+
+      {/* Content Area */}
+      <div className="px-4">
+         {activeTab === 'overview' && <OverviewTab />}
+         {activeTab === 'staff' && <StaffTab />}
+         {activeTab === 'history' && <HistoryTab />}
+      </div>
+    </div>
+  );
+};
