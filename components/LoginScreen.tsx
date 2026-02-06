@@ -104,9 +104,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
         {/* Note */}
         <div className="text-center">
-            <p className="text-xs text-stone-400 flex items-center justify-center gap-1">
-                <ShieldCheck size={12} /> For Owner Access: Use &apos;admin&apos; / &apos;admin123&apos;
-            </p>
+            <div className="text-xs text-stone-500 mb-3">
+                <p className="font-semibold mb-2">Test Credentials:</p>
+                <p className="text-stone-400">Owner: <span className="font-mono">admin</span> / <span className="font-mono">admin123</span></p>
+                <p className="text-stone-400">Manager: <span className="font-mono">abhay</span> / <span className="font-mono">manager123</span></p>
+                <p className="text-stone-400">Staff: <span className="font-mono">chef</span> / <span className="font-mono">staff123</span></p>
+            </div>
         </div>
 
         {/* Language Toggle */}
