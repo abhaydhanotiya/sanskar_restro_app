@@ -6,7 +6,16 @@ export enum TabName {
   PROFILE = 'Profile',
 }
 
-export type UserRole = 'WAITER' | 'OWNER';
+export type UserRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'STAFF';
+
+export interface User {
+  id: number;
+  username: string;
+  name?: string;
+  role: UserRole;
+  email?: string;
+  avatar?: string;
+}
 
 export enum TableStatus {
   EMPTY = 'EMPTY',

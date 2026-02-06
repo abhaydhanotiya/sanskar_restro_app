@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { verifyPassword, generateToken } from '@/lib/auth-utils';
 
-// Authentication endpoint with database validation
 export async function POST(request: Request) {
   try {
     const { username, password } = await request.json();
@@ -13,44 +13,50 @@ export async function POST(request: Request) {
       );
     }
 
-    const lowerName = username.trim().toLowerCase();
-    
-    // Owner authentication (hardcoded for security)
-    if ((lowerName === 'admin' || lowerName === 'owner') && password === 'admin123') {
-      return NextResponse.json({
-        user: {
-          name: 'Admin',
-          role: 'OWNER',
-        },
-        token: 'mock-jwt-token-owner',
-      });
-    }
-    
-    // Staff authentication - check against database
-    const staff = await prisma.staffMember.findFirst({
-      where: {
-        name: {
-          equals: username.trim(),
-          mode: 'insensitive',
-        },
+    // Find user by username
+    const user = await prisma.user.findUnique({
+      where: { username: username.trim() },
+      include: {
+        staff: true,
       },
     });
 
-    if (!staff) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
       );
     }
 
-    // In production, you should hash passwords and compare securely
-    // For now, accepting any password for valid staff members
+    if (!user.isActive) {
+      return NextResponse.json(
+        { error: 'User account is inactive' },
+        { status: 401 }
+      );
+    }
+
+    // Verify password
+    const passwordMatch = await verifyPassword(password, user.password);
+    if (!passwordMatch) {
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    // Generate auth token
+    const token = generateToken(user.id, user.role);
+
     return NextResponse.json({
       user: {
-        name: staff.name,
-        role: staff.role,
+        id: user.id,
+        username: user.username,
+        name: user.staff?.name || user.username,
+        role: user.role,
+        email: user.email,
+        avatar: user.staff?.avatar,
       },
-      token: `mock-jwt-token-${staff.id}`,
+      token,
     });
   } catch (error) {
     console.error('Login error:', error);

@@ -10,6 +10,28 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  OWNER
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+model User {
+  id               Int                @id @default(autoincrement())
+  username         String             @unique
+  email            String?            @unique
+  password         String             // hashed password
+  role             UserRole           @default(STAFF)
+  staffId          Int?               @unique // Link to StaffMember if applicable
+  staff            StaffMember?       @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@map("users")
+}
+
 model Table {
   id               Int                @id @default(autoincrement())
   capacity         Int
@@ -69,6 +91,7 @@ model StaffMember {
   name             String
   role             String
   avatar           String
+  user             User?              // Link to authentication User
   attendanceRecords AttendanceRecord[]
 
   @@map("staff_members")

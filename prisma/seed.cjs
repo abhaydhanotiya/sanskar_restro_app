@@ -9,6 +9,7 @@ require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -25,6 +26,7 @@ async function main() {
       "attendance_records",
       "order_items",
       "transactions",
+      "users",
       "staff_members",
       "menu_items",
       "tables"
@@ -144,6 +146,41 @@ async function main() {
   });
 
   console.log('✅ Staff created');
+
+  /* ---------- USERS (Authentication) ---------- */
+  const adminPassword = await bcrypt.hash('admin123', 10);
+  const managerPassword = await bcrypt.hash('manager123', 10);
+  const staffPassword = await bcrypt.hash('staff123', 10);
+
+  await prisma.user.createMany({
+    data: [
+      {
+        username: 'admin',
+        email: 'admin@sanskar-restro.local',
+        password: adminPassword,
+        role: 'OWNER',
+        isActive: true,
+      },
+      {
+        username: 'abhay',
+        email: 'abhay@sanskar-restro.local',
+        password: managerPassword,
+        role: 'MANAGER',
+        staffId: 1, // Link to Abhay staff member
+        isActive: true,
+      },
+      {
+        username: 'chef',
+        email: 'chef@sanskar-restro.local',
+        password: staffPassword,
+        role: 'STAFF',
+        staffId: 2, // Link to Head Chef staff member
+        isActive: true,
+      },
+    ],
+  });
+
+  console.log('✅ Users created (admin/admin123, abhay/manager123, chef/staff123)');
 
   /* ---------- ATTENDANCE ---------- */
   const today = new Date();
