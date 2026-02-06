@@ -1,5 +1,17 @@
 import { Bill, MenuItem, Table, TableStatus, OrderStatus, UserStats, Transaction, StaffMember, AttendanceRecord } from "./types";
 
+// ============================================
+// ACTIVE CONSTANTS (Used in Application)
+// ============================================
+
+export const MENU_CATEGORIES = ["All", "Appetizers", "Entrees", "Sides", "Drinks"];
+
+// ============================================
+// LEGACY MOCK DATA (NOT USED - For Reference Only)
+// ============================================
+// All actual data comes from PostgreSQL database via Prisma
+// These constants are kept for reference/testing only
+
 export const MOCK_TABLES: Table[] = [
   { 
     id: 1, 
@@ -98,16 +110,16 @@ export const MOCK_STAFF: StaffMember[] = [
 ];
 
 export const MOCK_ATTENDANCE: AttendanceRecord[] = [
-  { staffId: 1, date: "Today", status: "PRESENT", checkIn: "10:00 AM" },
-  { staffId: 2, date: "Today", status: "PRESENT", checkIn: "09:30 AM" },
-  { staffId: 3, date: "Today", status: "LATE", checkIn: "10:45 AM" },
-  { staffId: 4, date: "Today", status: "LEAVE" },
-  { staffId: 5, date: "Today", status: "ABSENT" },
+  { id: 1, staffId: 1, date: "Today", status: "PRESENT", checkIn: "10:00 AM" },
+  { id: 2, staffId: 2, date: "Today", status: "PRESENT", checkIn: "09:30 AM" },
+  { id: 3, staffId: 3, date: "Today", status: "LATE", checkIn: "10:45 AM" },
+  { id: 4, staffId: 4, date: "Today", status: "LEAVE" },
+  { id: 5, staffId: 5, date: "Today", status: "ABSENT" },
   // History Logs
-  { staffId: 1, date: "Yesterday", status: "PRESENT", checkIn: "09:55 AM", checkOut: "06:00 PM" },
-  { staffId: 2, date: "Yesterday", status: "PRESENT", checkIn: "09:15 AM", checkOut: "05:30 PM" },
-  { staffId: 3, date: "Yesterday", status: "ABSENT" },
-  { staffId: 1, date: "2 days ago", status: "PRESENT", checkIn: "10:00 AM", checkOut: "06:00 PM" },
+  { id: 6, staffId: 1, date: "Yesterday", status: "PRESENT", checkIn: "09:55 AM", checkOut: "06:00 PM" },
+  { id: 7, staffId: 2, date: "Yesterday", status: "PRESENT", checkIn: "09:15 AM", checkOut: "05:30 PM" },
+  { id: 8, staffId: 3, date: "Yesterday", status: "ABSENT" },
+  { id: 9, staffId: 1, date: "2 days ago", status: "PRESENT", checkIn: "10:00 AM", checkOut: "06:00 PM" },
 ];
 
-export const MENU_CATEGORIES = ["All", "Appetizers", "Entrees", "Sides", "Drinks"];
+// Note: All actual data is now served from the PostgreSQL database via API routes
