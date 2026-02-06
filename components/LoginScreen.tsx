@@ -4,9 +4,10 @@ import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ChefHat, AlertCircle, ShieldCheck } from 'lucide-react';
 import { UserRole } from '@/types';
+import { apiClient } from '@/lib/api-client';
 
 interface LoginScreenProps {
-  onLogin: (name: string, role: UserRole) => void;
+  onLogin: (id: number, name: string, role: UserRole) => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
@@ -42,8 +43,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         localStorage.setItem('authToken', data.token);
       }
 
+      // Start shift for staff members (not owners)
+      if (data.user.role !== 'OWNER') {
+        try {
+          await apiClient.startShift(data.user.id);
+        } catch (shiftError) {
+          console.error('Failed to start shift:', shiftError);
+          // Continue with login even if shift start fails
+        }
+      }
+
       // Call the onLogin callback with user data
-      onLogin(data.user.name, data.user.role);
+      onLogin(data.user.id, data.user.name, data.user.role);
     } catch (err) {
       setError(t('invalidCredentials'));
     } finally {

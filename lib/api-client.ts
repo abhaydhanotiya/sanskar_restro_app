@@ -93,11 +93,30 @@ class ApiClient {
     });
   }
 
-  async updateAttendanceRecord(staffId: number, date: string, updates: any) {
+  async updateAttendanceRecord(recordId: number, updates: any) {
     return this.request('/attendance', {
       method: 'PATCH',
-      body: JSON.stringify({ staffId, date, updates }),
+      body: JSON.stringify({ recordId, updates }),
     });
+  }
+
+  // Shift Management
+  async startShift(userId: number) {
+    return this.request('/shift', {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+  }
+
+  async endShift(userId: number) {
+    return this.request('/shift', {
+      method: 'PATCH',
+      body: JSON.stringify({ userId }),
+    });
+  }
+
+  async getCurrentShift(userId: number) {
+    return this.request(`/shift?userId=${userId}`);
   }
 
   // Auth

@@ -100,7 +100,13 @@ export const TRANSLATIONS = {
     searchTxn: "Search ID or Item",
     allTime: "All Time",
     today: "Today",
-    yesterday: "Yesterday"
+    yesterday: "Yesterday",
+    // Shift Management
+    shiftEnded: "Shift ended successfully",
+    shiftEndFailed: "Failed to end shift",
+    endingShift: "Ending Shift...",
+    shiftStarted: "Shift started successfully",
+    completed: "Completed",
   },
   hi: {
     welcome: "स्वागत है",
@@ -200,6 +206,12 @@ export const TRANSLATIONS = {
     searchTxn: "ID या आइटम खोजें",
     allTime: "हर समय",
     today: "आज",
-    yesterday: "कल"
+    yesterday: "कल",
+    // Shift Management
+    shiftEnded: "शिफ्ट सफलतापूर्वक समाप्त हुई",
+    shiftEndFailed: "शिफ्ट समाप्त करने में विफल",
+    endingShift: "शिफ्ट समाप्त हो रही है...",
+    shiftStarted: "शिफ्ट सफलतापूर्वक शुरू हुई",
+    completed: "पूर्ण हुआ",
   }
 };

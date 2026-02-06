@@ -1,21 +1,26 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { LogOut, Settings, Award, DollarSign, Clock, ListOrdered } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOwnerData } from '@/hooks/useOwnerData';
 import { useTables } from '@/contexts/TablesContext';
+import { apiClient } from '@/lib/api-client';
+import { useToast } from '@/contexts/ToastContext';
 
 interface ProfileTabProps {
   userName: string;
+  userId: number;
   onLogout: () => void;
 }
 
-export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, onLogout }) => {
+export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, onLogout }) => {
   const { t } = useLanguage();
   const { history } = useTables();
   const { staff, attendance } = useOwnerData();
+  const { showToast } = useToast();
+  const [isEndingShift, setIsEndingShift] = useState(false);
 
   const toDate = (value: string | Date | null | undefined) => {
     if (!value) return null;
@@ -146,11 +151,26 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, onLogout }) =>
 
       {/* Logout */}
       <button 
-        onClick={onLogout}
-        className="w-full mt-6 bg-red-50 text-red-600 font-bold py-3 rounded-xl border border-red-100 flex items-center justify-center hover:bg-red-100 transition-colors"
+        onClick={async () => {
+          setIsEndingShift(true);
+          try {
+            // End shift first
+            await apiClient.endShift(userId);
+            showToast(t('shiftEnded') || 'Shift ended successfully', 'success');
+          } catch (error) {
+            console.error('Failed to end shift:', error);
+            showToast(t('shiftEndFailed') || 'Failed to end shift', 'error');
+          } finally {
+            setIsEndingShift(false);
+            // Logout anyway
+            onLogout();
+          }
+        }}
+        disabled={isEndingShift}
+        className="w-full mt-6 bg-red-50 text-red-600 font-bold py-3 rounded-xl border border-red-100 flex items-center justify-center hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <LogOut size={18} className="mr-2" />
-        {t('endShift')}
+        {isEndingShift ? t('endingShift') || 'Ending Shift...' : t('endShift')}
       </button>
     </div>
   );

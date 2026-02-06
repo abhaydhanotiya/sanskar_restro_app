@@ -90,6 +90,7 @@ export interface StaffMember {
 }
 
 export interface AttendanceRecord {
+  id: number;
   staffId: number;
   date: string;
   status: 'PRESENT' | 'ABSENT' | 'LEAVE' | 'LATE';

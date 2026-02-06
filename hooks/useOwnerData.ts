@@ -32,11 +32,11 @@ export function useOwnerData() {
     }
   };
 
-  const updateAttendance = async (staffId: number, date: string, updates: Partial<AttendanceRecord>) => {
+  const updateAttendance = async (recordId: number, updates: Partial<AttendanceRecord>) => {
     try {
-      await apiClient.updateAttendanceRecord(staffId, date, updates);
+      await apiClient.updateAttendanceRecord(recordId, updates);
       setAttendance(prev => prev.map(a => 
-        a.staffId === staffId && a.date === date ? { ...a, ...updates } : a
+        a.id === recordId ? { ...a, ...updates } : a
       ));
     } catch (error) {
       console.error('Failed to update attendance:', error);

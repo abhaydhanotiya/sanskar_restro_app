@@ -33,9 +33,21 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { id, updates } = await request.json();
+    const body = await request.json();
+    
+    // Support both formats: { id, updates } and { recordId, updates }
+    const recordId = body.id || body.recordId;
+    const updates = body.updates;
+    
+    if (!recordId) {
+      return NextResponse.json(
+        { error: 'Record ID required' },
+        { status: 400 }
+      );
+    }
+    
     const updatedRecord = await prisma.attendanceRecord.update({
-      where: { id },
+      where: { id: recordId },
       data: updates,
       include: {
         staff: true,

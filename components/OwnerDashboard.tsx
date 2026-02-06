@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
-import { LayoutDashboard, Users, History, TrendingUp, IndianRupee, ShoppingBag, LogOut, CalendarCheck, AlertCircle, Search, Filter, X, ChevronDown, FileText, Receipt, Calendar } from 'lucide-react';
+import { LayoutDashboard, Users, History, TrendingUp, IndianRupee, ShoppingBag, LogOut, CalendarCheck, AlertCircle, Search, Filter, X, ChevronDown, FileText, Receipt, Calendar, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTables } from '@/contexts/TablesContext';
 import { useOwnerData } from '@/hooks/useOwnerData';
@@ -16,8 +16,9 @@ interface OwnerDashboardProps {
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, onLogout }) => {
   const { t } = useLanguage();
   const { history } = useTables();
-    const { staff, attendance, transactions } = useOwnerData();
+    const { staff, attendance, transactions, refreshData } = useOwnerData();
   const [activeTab, setActiveTab] = useState<'overview' | 'staff' | 'history'>('overview');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
     const toDate = (value: string | Date | null | undefined) => {
         if (!value) return null;
@@ -144,20 +145,36 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, onLogo
     });
 
     const dateOptions = Array.from(new Set(attendance.map(r => formatDateLabel(r.date)).filter(Boolean)));
+const handleRefresh = async () => {
+        setIsRefreshing(true);
+        await refreshData();
+        setTimeout(() => setIsRefreshing(false), 500);
+    };
 
     return (
         <div className="space-y-4 animate-fade-in">
-            <div className="flex bg-white p-1 rounded-xl border border-stone-200 w-fit">
+            <div className="flex justify-between items-center">
+                <div className="flex bg-white p-1 rounded-xl border border-stone-200 w-fit">
+                    <button 
+                      onClick={() => setView('today')}
+                      className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${view === 'today' ? 'bg-brown text-white' : 'text-stone-500 hover:bg-stone-50'}`}
+                    >
+                        {t('today')}
+                    </button>
+                    <button 
+                      onClick={() => setView('log')}
+                      className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${view === 'log' ? 'bg-brown text-white' : 'text-stone-500 hover:bg-stone-50'}`}
+                    >
+                        {t('attendanceLog')}
+                    </button>
+                </div>
                 <button 
-                  onClick={() => setView('today')}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${view === 'today' ? 'bg-brown text-white' : 'text-stone-500 hover:bg-stone-50'}`}
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="p-2 bg-white rounded-xl border border-stone-200 hover:bg-stone-50 transition-all disabled:opacity-50"
+                    title="Refresh attendance"
                 >
-                    {t('today')}
-                </button>
-                <button 
-                  onClick={() => setView('log')}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${view === 'log' ? 'bg-brown text-white' : 'text-stone-500 hover:bg-stone-50'}`}
-                >
+                    <RefreshCw size={18} className={`text-brown ${isRefreshing ? 'animate-spin' : ''}`} />
                     {t('attendanceLog')}
                 </button>
             </div>
@@ -166,12 +183,22 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, onLogo
                 <div className="grid gap-4">
                     {staff.map(staffMember => {
                         const record = attendance.find(r => r.staffId === staffMember.id && isSameDay(toDate(r.date), new Date()));
-                        const status = record?.status || 'ABSENT';
+                        
+                        // Determine actual status based on check-in/check-out
+                        let displayStatus = 'ABSENT';
+                        if (record) {
+                            if (record.checkOut) {
+                                displayStatus = 'CHECKED_OUT';
+                            } else if (record.checkIn) {
+                                displayStatus = record.status; // PRESENT, LATE, etc.
+                            }
+                        }
                         
                         let statusColor = '';
                         let statusIcon = null;
+                        let statusLabel = displayStatus;
 
-                        switch(status) {
+                        switch(displayStatus) {
                             case 'PRESENT': 
                                 statusColor = 'bg-green-100 text-green-700 border-green-200'; 
                                 statusIcon = <CalendarCheck size={16} />;
@@ -182,6 +209,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, onLogo
                                 break;
                             case 'LEAVE':
                                 statusColor = 'bg-blue-100 text-blue-700 border-blue-200';
+                                break;
+                            case 'CHECKED_OUT':
+                                statusColor = 'bg-stone-100 text-stone-600 border-stone-200';
+                                statusLabel = 'COMPLETED';
                                 break;
                             default:
                                 statusColor = 'bg-red-50 text-red-500 border-red-100';
@@ -201,10 +232,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, onLogo
                                 <div className="text-right">
                                     <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${statusColor} mb-1`}>
                                         {statusIcon}
-                                        {t(status.toLowerCase() as any)}
+                                        {t(statusLabel.toLowerCase() as any)}
                                     </div>
                                     {record?.checkIn && (
-                                        <p className="text-xs text-stone-400 font-mono">In: {formatTime(record.checkIn)}</p>
+                                        <div className="text-xs text-stone-400 font-mono space-y-0.5">
+                                            <p>In: {formatTime(record.checkIn)}</p>
+                                            {record.checkOut && (
+                                                <p>Out: {formatTime(record.checkOut)}</p>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             </div>

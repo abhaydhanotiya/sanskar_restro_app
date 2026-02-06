@@ -12,7 +12,7 @@ import { ProfileTab } from '@/components/ProfileTab';
 import { KitchenTab } from '@/components/KitchenTab';
 import { TabName, UserRole } from '@/types';
 
-const ServerApp: React.FC<{ userName: string; onLogout: () => void }> = ({ userName, onLogout }) => {
+const ServerApp: React.FC<{ userName: string; userId: number; onLogout: () => void }> = ({ userName, userId, onLogout }) => {
   const [activeTab, setActiveTab] = useState<TabName>(TabName.TABLES);
 
   const renderContent = () => {
@@ -26,7 +26,7 @@ const ServerApp: React.FC<{ userName: string; onLogout: () => void }> = ({ userN
       case TabName.CHECKOUTS:
         return <CheckoutsTab />;
       case TabName.PROFILE:
-        return <ProfileTab userName={userName} onLogout={onLogout} />;
+        return <ProfileTab userName={userName} userId={userId} onLogout={onLogout} />;
       default:
         return <TablesTab />;
     }
@@ -44,14 +44,16 @@ const ServerApp: React.FC<{ userName: string; onLogout: () => void }> = ({ userN
 };
 
 export const MainApp: React.FC = () => {
-  const [user, setUser] = useState<{name: string, role: UserRole} | null>(null);
+  const [user, setUser] = useState<{id: number, name: string, role: UserRole} | null>(null);
 
-  const handleLogin = (name: string, role: UserRole) => {
-    setUser({ name, role });
+  const handleLogin = (id: number, name: string, role: UserRole) => {
+    setUser({ id, name, role });
   };
 
   const handleLogout = () => {
     setUser(null);
+    // Clear auth token
+    localStorage.removeItem('authToken');
   };
 
   return (
@@ -61,7 +63,7 @@ export const MainApp: React.FC = () => {
       ) : user.role === 'OWNER' ? (
         <OwnerDashboard userName={user.name} onLogout={handleLogout} />
       ) : (
-        <ServerApp userName={user.name} onLogout={handleLogout} />
+        <ServerApp userName={user.name} userId={user.id} onLogout={handleLogout} />
       )}
     </>
   );
