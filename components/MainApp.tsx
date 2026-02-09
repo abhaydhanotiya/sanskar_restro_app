@@ -47,12 +47,14 @@ export const MainApp: React.FC = () => {
   const [user, setUser] = useState<{id: number, name: string, role: UserRole, shiftStartTime: Date} | null>(null);
 
   const handleLogin = (id: number, name: string, role: UserRole) => {
-    setUser({ id, name, role, shiftStartTime: new Date() });
+    const shiftStart = new Date();
+    localStorage.setItem('shiftStartTime', shiftStart.toISOString());
+    setUser({ id, name, role, shiftStartTime: shiftStart });
   };
 
   const handleLogout = () => {
     setUser(null);
-    // Clear auth token
+    // Clear auth token and shift time
     localStorage.removeItem('authToken');
     localStorage.removeItem('shiftStartTime');
   };

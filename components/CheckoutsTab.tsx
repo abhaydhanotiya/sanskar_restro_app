@@ -246,7 +246,7 @@ export const CheckoutsTab: React.FC = () => {
                                 </h4>
                                 <div className="text-xs text-stone-400 flex flex-col gap-0.5 mt-0.5">
                                     <span>{txn.id}</span>
-                                    <span>{txn.timestamp}</span>
+                                    <span>{new Date(txn.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                             </div>
                         </div>

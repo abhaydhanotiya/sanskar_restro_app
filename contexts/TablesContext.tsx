@@ -233,7 +233,7 @@ export const TablesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           isTakeaway: target.isTakeaway,
           items: target.currentOrders || [],
           totalAmount: total,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          timestamp: new Date().toISOString() // Store full ISO timestamp instead of just time
         };
 
         await apiClient.createTransaction(transaction);

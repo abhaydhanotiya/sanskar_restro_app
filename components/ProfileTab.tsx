@@ -34,11 +34,21 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftS
   // Calculate shift duration from login time
   const shiftDuration = (new Date().getTime() - shiftStartTime.getTime()) / (1000 * 60 * 60);
 
+  console.log('=== SHIFT DEBUG ===');
+  console.log('Shift Start Time:', shiftStartTime);
+  console.log('Current Time:', new Date());
+  console.log('Shift Duration (hours):', shiftDuration);
+  console.log('Total transactions in history:', history.length);
+
   // Filter orders from shift start time onwards
   const shiftOrders = history.filter(txn => {
     const txnDate = toDate(txn.timestamp);
-    return txnDate && txnDate >= shiftStartTime;
+    const isAfterShift = txnDate && txnDate >= shiftStartTime;
+    console.log('Transaction:', txn.id, 'Time:', txnDate, 'IsAfterShift:', isAfterShift);
+    return isAfterShift;
   });
+  
+  console.log('Shift Orders Count:', shiftOrders.length);
   
   const ordersServed = shiftOrders.length;
 
