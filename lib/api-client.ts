@@ -102,21 +102,21 @@ class ApiClient {
 
   // Shift Management
   async startShift(userId: number) {
-    return this.request('/shift', {
+    return this.request('/shift/start', {
       method: 'POST',
       body: JSON.stringify({ userId }),
     });
   }
 
   async endShift(userId: number) {
-    return this.request('/shift', {
-      method: 'PATCH',
+    return this.request('/shift/end', {
+      method: 'POST',
       body: JSON.stringify({ userId }),
     });
   }
 
-  async getCurrentShift(userId: number) {
-    return this.request(`/shift?userId=${userId}`);
+  async getShiftStatus(userId: number) {
+    return this.request(`/shift/status?userId=${userId}`);
   }
 
   // Auth

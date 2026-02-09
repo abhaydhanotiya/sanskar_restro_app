@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { LogOut, Settings, Award, DollarSign, Clock, ListOrdered } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LogOut, Settings, Award, Clock, ListOrdered } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOwnerData } from '@/hooks/useOwnerData';
@@ -19,9 +19,28 @@ interface ProfileTabProps {
 export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftStartTime, onLogout }) => {
   const { t } = useLanguage();
   const { history } = useTables();
-  const { staff, attendance } = useOwnerData();
+  const { staff } = useOwnerData();
   const { showToast } = useToast();
   const [isEndingShift, setIsEndingShift] = useState(false);
+  const [shiftStatus, setShiftStatus] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchShiftStatus = async () => {
+      try {
+        const status = await apiClient.getShiftStatus(userId);
+        setShiftStatus(status);
+      } catch (error) {
+        console.error('Error fetching shift status:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchShiftStatus();
+    const interval = setInterval(fetchShiftStatus, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, [userId]);
 
   const toDate = (value: string | Date | null | undefined) => {
     if (!value) return null;
@@ -36,8 +55,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftS
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   };
 
-  // Calculate shift duration from login time
-  const shiftDuration = (new Date().getTime() - shiftStartTime.getTime()) / (1000 * 60 * 60);
+  // Get online hours from backend shift status
+  const hoursWorked = shiftStatus?.hoursWorked ?? 0;
 
   const today = new Date();
 
@@ -87,16 +106,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftS
 
       {/* Stats Cards */}
       <h3 className="font-bold text-brown-dark mb-3 px-1">{t('today')}</h3>
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
           <Clock className="w-6 h-6 mx-auto text-peach mb-2" />
-          <div className="text-lg font-bold text-gray-800">{shiftDuration.toFixed(1)}h</div>
+          <div className="text-lg font-bold text-gray-800">{hoursWorked.toFixed(1)}h</div>
           <div className="text-[10px] text-gray-500 uppercase font-medium">{t('online')}</div>
-        </div>
-        <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
-          <DollarSign className="w-6 h-6 mx-auto text-green-500 mb-2" />
-          <div className="text-lg font-bold text-gray-800">₹0</div>
-          <div className="text-[10px] text-gray-500 uppercase font-medium">{t('tips')}</div>
         </div>
         <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
           <ListOrdered className="w-6 h-6 mx-auto text-blue-500 mb-2" />
