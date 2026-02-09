@@ -35,8 +35,24 @@ export const TableDetailView: React.FC<TableDetailViewProps> = ({ table, onBack 
 
   const hasDraftItems = table.currentOrders?.some(item => item.status === OrderStatus.ORDERING);
   const subtotal = calculateSubtotal();
+  
+  // Check if all items are served (required for bill)
+  const allItemsServed = table.currentOrders && table.currentOrders.length > 0 
+    ? table.currentOrders.every(item => item.status === OrderStatus.SERVED || item.status === OrderStatus.VOID)
+    : false;
+  
+  // Check if any items are being prepared or served (blocks table move)
+  const hasActiveOrders = table.currentOrders?.some(item => 
+    item.status === OrderStatus.PREPARING || 
+    item.status === OrderStatus.READY || 
+    item.status === OrderStatus.SERVED
+  ) ?? false;
 
   const handleRequestBill = () => {
+    if (!allItemsServed) {
+      showToast('Cannot request bill until all items are served', 'error');
+      return;
+    }
     updateTable(table.id, { status: TableStatus.NEEDS_BILL });
     showToast('Bill requested. Notification sent to Cashier.', 'info');
   };
@@ -47,6 +63,11 @@ export const TableDetailView: React.FC<TableDetailViewProps> = ({ table, onBack 
   };
 
   const handleMoveTable = (targetId: number) => {
+    if (hasActiveOrders) {
+      showToast('Cannot move table with active orders', 'error');
+      setIsMovingTable(false);
+      return;
+    }
     moveTable(table.id, targetId);
     setIsMovingTable(false);
     onBack(); 
@@ -156,18 +177,28 @@ export const TableDetailView: React.FC<TableDetailViewProps> = ({ table, onBack 
                 </button>
                 <button 
                   onClick={() => setIsMovingTable(true)}
-                  className="flex-1 min-w-[110px] bg-stone-100 text-stone-600 py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold border border-stone-200 hover:bg-stone-200 active:scale-95 transition-all"
+                  disabled={hasActiveOrders}
+                  className={`flex-1 min-w-[110px] py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold border transition-all ${
+                    hasActiveOrders
+                      ? 'bg-stone-50 text-stone-300 border-stone-100 cursor-not-allowed opacity-60'
+                      : 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200 active:scale-95'
+                  }`}
+                  title={hasActiveOrders ? 'Cannot move table with active orders' : ''}
                 >
                     <ArrowRightLeft size={16} />
                     {t('moveTable')}
                 </button>
                 <button 
                     onClick={handleRequestBill}
-                    className={`flex-1 min-w-[110px] py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold shadow-sm active:scale-95 transition-all border ${
+                    disabled={!allItemsServed && table.status !== TableStatus.NEEDS_BILL}
+                    className={`flex-1 min-w-[110px] py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold shadow-sm transition-all border ${
                     table.status === TableStatus.NEEDS_BILL 
                         ? 'bg-green-100 text-green-700 border-green-200 cursor-default' 
-                        : 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200'
+                        : allItemsServed
+                        ? 'bg-stone-100 text-stone-600 border-stone-200 hover:bg-stone-200 active:scale-95'
+                        : 'bg-stone-50 text-stone-300 border-stone-100 cursor-not-allowed opacity-60'
                     }`}
+                    title={!allItemsServed && table.status !== TableStatus.NEEDS_BILL ? 'All items must be served first' : ''}
                 >
                     <Receipt size={16} />
                     {table.status === TableStatus.NEEDS_BILL ? t('billSent') : t('requestBill')}
