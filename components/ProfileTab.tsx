@@ -12,10 +12,11 @@ import { useToast } from '@/contexts/ToastContext';
 interface ProfileTabProps {
   userName: string;
   userId: number;
+  shiftStartTime: Date;
   onLogout: () => void;
 }
 
-export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, onLogout }) => {
+export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftStartTime, onLogout }) => {
   const { t } = useLanguage();
   const { history } = useTables();
   const { staff, attendance } = useOwnerData();
@@ -28,33 +29,16 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, onLogo
     return Number.isNaN(date.getTime()) ? null : date;
   };
 
-  const isSameDay = (a: Date | null, b: Date) => {
-    if (!a) return false;
-    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-  };
+  // Calculate shift duration from login time
+  const shiftDuration = (new Date().getTime() - shiftStartTime.getTime()) / (1000 * 60 * 60);
 
-  const staffMember = staff.find(s => s.name.toLowerCase() === userName.toLowerCase());
-  const today = new Date();
-  const attendanceToday = attendance.find(r => r.staffId === staffMember?.id && isSameDay(toDate(r.date), today));
-
-  const checkIn = toDate(attendanceToday?.checkIn);
-  const checkOut = toDate(attendanceToday?.checkOut) ?? null;
-  const hoursWorked = checkIn
-    ? ((checkOut ?? new Date()).getTime() - checkIn.getTime()) / (1000 * 60 * 60)
-    : 0;
-
-  // Filter today's transactions
-  const todaysOrders = history.filter(txn => {
+  // Filter orders from shift start time onwards
+  const shiftOrders = history.filter(txn => {
     const txnDate = toDate(txn.timestamp);
-    return txnDate && isSameDay(txnDate, today);
+    return txnDate && txnDate >= shiftStartTime;
   });
   
-  // For now, show all orders if today's filter returns 0
-  const ordersServed = todaysOrders.length > 0 ? todaysOrders.length : history.length;
-  
-  console.log('Total history:', history.length);
-  console.log('Today orders:', todaysOrders.length);
-  console.log('Orders served:', ordersServed);
+  const ordersServed = shiftOrders.length;
 
   const chartData = (() => {
     const now = new Date();
@@ -64,11 +48,9 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, onLogo
       return d;
     });
 
-    // Use all history if today's orders are empty
-    const ordersToChart = todaysOrders.length > 0 ? todaysOrders : history;
-    
+    // Use shift orders for the chart
     const counts = new Map<number, number>();
-    ordersToChart.forEach(txn => {
+    shiftOrders.forEach(txn => {
       const txnDate = toDate(txn.timestamp);
       if (!txnDate) return;
       const hourKey = txnDate.getHours();
@@ -99,7 +81,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, onLogo
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
           <Clock className="w-6 h-6 mx-auto text-peach mb-2" />
-          <div className="text-lg font-bold text-gray-800">{hoursWorked.toFixed(1)}h</div>
+          <div className="text-lg font-bold text-gray-800">{shiftDuration.toFixed(1)}h</div>
           <div className="text-[10px] text-gray-500 uppercase font-medium">{t('online')}</div>
         </div>
         <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">

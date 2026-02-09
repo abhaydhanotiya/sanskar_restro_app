@@ -12,7 +12,7 @@ import { ProfileTab } from '@/components/ProfileTab';
 import { KitchenTab } from '@/components/KitchenTab';
 import { TabName, UserRole } from '@/types';
 
-const ServerApp: React.FC<{ userName: string; userId: number; onLogout: () => void }> = ({ userName, userId, onLogout }) => {
+const ServerApp: React.FC<{ userName: string; userId: number; shiftStartTime: Date; onLogout: () => void }> = ({ userName, userId, shiftStartTime, onLogout }) => {
   const [activeTab, setActiveTab] = useState<TabName>(TabName.TABLES);
 
   const renderContent = () => {
@@ -26,7 +26,7 @@ const ServerApp: React.FC<{ userName: string; userId: number; onLogout: () => vo
       case TabName.CHECKOUTS:
         return <CheckoutsTab />;
       case TabName.PROFILE:
-        return <ProfileTab userName={userName} userId={userId} onLogout={onLogout} />;
+        return <ProfileTab userName={userName} userId={userId} shiftStartTime={shiftStartTime} onLogout={onLogout} />;
       default:
         return <TablesTab />;
     }
@@ -44,16 +44,17 @@ const ServerApp: React.FC<{ userName: string; userId: number; onLogout: () => vo
 };
 
 export const MainApp: React.FC = () => {
-  const [user, setUser] = useState<{id: number, name: string, role: UserRole} | null>(null);
+  const [user, setUser] = useState<{id: number, name: string, role: UserRole, shiftStartTime: Date} | null>(null);
 
   const handleLogin = (id: number, name: string, role: UserRole) => {
-    setUser({ id, name, role });
+    setUser({ id, name, role, shiftStartTime: new Date() });
   };
 
   const handleLogout = () => {
     setUser(null);
     // Clear auth token
     localStorage.removeItem('authToken');
+    localStorage.removeItem('shiftStartTime');
   };
 
   return (
@@ -63,7 +64,7 @@ export const MainApp: React.FC = () => {
       ) : user.role === 'OWNER' ? (
         <OwnerDashboard userName={user.name} onLogout={handleLogout} />
       ) : (
-        <ServerApp userName={user.name} userId={user.id} onLogout={handleLogout} />
+        <ServerApp userName={user.name} userId={user.id} shiftStartTime={user.shiftStartTime} onLogout={handleLogout} />
       )}
     </>
   );
