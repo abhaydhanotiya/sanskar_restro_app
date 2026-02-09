@@ -31,26 +31,23 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftS
 
   const staffMember = staff.find(s => s.name.toLowerCase() === userName.toLowerCase());
 
+  const isSameDay = (a: Date | null, b: Date) => {
+    if (!a) return false;
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  };
+
   // Calculate shift duration from login time
   const shiftDuration = (new Date().getTime() - shiftStartTime.getTime()) / (1000 * 60 * 60);
 
-  console.log('=== SHIFT DEBUG ===');
-  console.log('Shift Start Time:', shiftStartTime);
-  console.log('Current Time:', new Date());
-  console.log('Shift Duration (hours):', shiftDuration);
-  console.log('Total transactions in history:', history.length);
+  const today = new Date();
 
-  // Filter orders from shift start time onwards
-  const shiftOrders = history.filter(txn => {
+  // Filter orders from today
+  const todaysOrders = history.filter(txn => {
     const txnDate = toDate(txn.timestamp);
-    const isAfterShift = txnDate && txnDate >= shiftStartTime;
-    console.log('Transaction:', txn.id, 'Time:', txnDate, 'IsAfterShift:', isAfterShift);
-    return isAfterShift;
+    return txnDate && isSameDay(txnDate, today);
   });
   
-  console.log('Shift Orders Count:', shiftOrders.length);
-  
-  const ordersServed = shiftOrders.length;
+  const ordersServed = todaysOrders.length;
 
   const chartData = (() => {
     const now = new Date();
@@ -60,9 +57,9 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftS
       return d;
     });
 
-    // Use shift orders for the chart
+    // Use today's orders for the chart
     const counts = new Map<number, number>();
-    shiftOrders.forEach(txn => {
+    todaysOrders.forEach(txn => {
       const txnDate = toDate(txn.timestamp);
       if (!txnDate) return;
       const hourKey = txnDate.getHours();
@@ -89,7 +86,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftS
       </div>
 
       {/* Stats Cards */}
-      <h3 className="font-bold text-brown-dark mb-3 px-1">{t('shiftStats')}</h3>
+      <h3 className="font-bold text-brown-dark mb-3 px-1">{t('today')}</h3>
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-white p-3 rounded-xl shadow-sm text-center border border-gray-100">
           <Clock className="w-6 h-6 mx-auto text-peach mb-2" />
