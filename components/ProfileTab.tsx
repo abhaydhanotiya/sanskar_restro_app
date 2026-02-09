@@ -29,6 +29,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftS
     return Number.isNaN(date.getTime()) ? null : date;
   };
 
+  const staffMember = staff.find(s => s.name.toLowerCase() === userName.toLowerCase());
+
   // Calculate shift duration from login time
   const shiftDuration = (new Date().getTime() - shiftStartTime.getTime()) / (1000 * 60 * 60);
 
