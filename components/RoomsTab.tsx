@@ -113,8 +113,8 @@ const CheckInModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center animate-fade-in" onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-4 animate-slide-up max-h-[85dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center animate-fade-in" onClick={onClose} style={{ bottom: '0' }}>
+      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-4 animate-slide-up max-h-[85dvh] overflow-y-auto mb-[72px] sm:mb-0" onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-bold text-brown-dark">{t('roomCheckIn')} — {room.roomNumber}</h3>
 
         <div>
@@ -193,7 +193,7 @@ const CheckInModal: React.FC<{
           </div>
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 pt-2 pb-6 sm:pb-0">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-stone-600 font-semibold text-sm">
             {t('cancel')}
           </button>
@@ -213,6 +213,7 @@ const CheckInModal: React.FC<{
 // --- Main RoomsTab ---
 export const RoomsTab: React.FC = () => {
   const { t } = useLanguage();
+
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
@@ -225,6 +226,19 @@ export const RoomsTab: React.FC = () => {
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [showBillingForm, setShowBillingForm] = useState(false);
   const [pendingHistoryBooking, setPendingHistoryBooking] = useState<RoomBooking | null>(null);
+
+  // Force body to not scroll when modal is open
+  const [modalOpen, setModalOpen] = useState(false);
+  useEffect(() => {
+    if (!!selectedRoom || !!checkInRoom || !!invoiceData) {
+      document.body.style.overflow = 'hidden';
+      setModalOpen(true);
+    } else {
+      document.body.style.overflow = '';
+      setModalOpen(false);
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [selectedRoom, checkInRoom, invoiceData]);
 
   const fetchRooms = useCallback(async () => {
     try {
