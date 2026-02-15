@@ -217,7 +217,6 @@ export const TRANSLATIONS = {
     priceAC: "AC Price",
     priceNonAC: "Non-AC Price",
     saveChanges: "Save Changes",
-    addItem: "Add Item",
     editItem: "Edit Item",
     deleteItem: "Delete Item",
     itemCategory: "Category",
@@ -236,7 +235,6 @@ export const TRANSLATIONS = {
     noMenuItems: "No menu items found",
     searchItems: "Search items...",
     allCategories: "All Categories",
-    guests: "guests",
   },
   hi: {
     welcome: "स्वागत है",
@@ -453,7 +451,6 @@ export const TRANSLATIONS = {
     priceAC: "AC कीमत",
     priceNonAC: "बिना AC कीमत",
     saveChanges: "बदलाव सहेजें",
-    addItem: "आइटम जोड़ें",
     editItem: "आइटम संपादित करें",
     deleteItem: "आइटम हटाएं",
     itemCategory: "श्रेणी",
@@ -472,6 +469,5 @@ export const TRANSLATIONS = {
     noMenuItems: "कोई मेन्यू आइटम नहीं मिला",
     searchItems: "आइटम खोजें...",
     allCategories: "सभी श्रेणियां",
-    guests: "मेहमान",
   }
 };
