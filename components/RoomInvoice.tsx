@@ -62,8 +62,8 @@ export const BillingDetailsModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[55] flex items-end sm:items-center justify-center animate-fade-in" onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-4 animate-slide-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[65] flex items-end sm:items-center justify-center animate-fade-in" onClick={onClose}>
+      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-4 animate-slide-up max-h-[85dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
             <Building2 size={20} className="text-orange-600" />
