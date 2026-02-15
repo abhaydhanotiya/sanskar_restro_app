@@ -140,47 +140,47 @@ async function main() {
   /* ---------- STAFF ---------- */
   await prisma.staffMember.createMany({
     data: [
-      { name: 'Abhay', role: 'Manager', avatar: '👩‍💼' },
-      { name: 'Head Chef', role: 'Chef', avatar: '👨‍🍳' },
+      { name: 'Captain', role: 'Captain', avatar: '🧑‍🍳' },
+      { name: 'Billing', role: 'Billing', avatar: '🧾' },
     ],
   });
 
   console.log('✅ Staff created');
 
   /* ---------- USERS (Authentication) ---------- */
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const managerPassword = await bcrypt.hash('manager123', 10);
-  const staffPassword = await bcrypt.hash('staff123', 10);
+  const ownerPassword = await bcrypt.hash('owner123', 10);
+  const captainPassword = await bcrypt.hash('captain123', 10);
+  const billingPassword = await bcrypt.hash('billing123', 10);
 
   await prisma.user.createMany({
     data: [
       {
-        username: 'admin',
-        email: 'admin@sanskar-restro.local',
-        password: adminPassword,
+        username: 'owner',
+        email: 'owner@sanskar-restro.local',
+        password: ownerPassword,
         role: 'OWNER',
         isActive: true,
       },
       {
-        username: 'abhay',
-        email: 'abhay@sanskar-restro.local',
-        password: managerPassword,
-        role: 'MANAGER',
-        staffId: 1, // Link to Abhay staff member
+        username: 'captain',
+        email: 'captain@sanskar-restro.local',
+        password: captainPassword,
+        role: 'CAPTAIN',
+        staffId: 1,
         isActive: true,
       },
       {
-        username: 'chef',
-        email: 'chef@sanskar-restro.local',
-        password: staffPassword,
-        role: 'STAFF',
-        staffId: 2, // Link to Head Chef staff member
+        username: 'billing',
+        email: 'billing@sanskar-restro.local',
+        password: billingPassword,
+        role: 'BILLING',
+        staffId: 2,
         isActive: true,
       },
     ],
   });
 
-  console.log('✅ Users created (admin/admin123, abhay/manager123, chef/staff123)');
+  console.log('✅ Users created (owner/owner123, captain/captain123, billing/billing123)');
 
   /* ---------- ATTENDANCE ---------- */
   const today = new Date();

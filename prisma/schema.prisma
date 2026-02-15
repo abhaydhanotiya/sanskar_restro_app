@@ -12,9 +12,8 @@ datasource db {
 
 enum UserRole {
   OWNER
-  ADMIN
-  MANAGER
-  STAFF
+  CAPTAIN
+  BILLING
 }
 
 model User {
@@ -22,7 +21,7 @@ model User {
   username         String             @unique
   email            String?            @unique
   password         String             // hashed password
-  role             UserRole           @default(STAFF)
+  role             UserRole           @default(CAPTAIN)
   staffId          Int?               @unique // Link to StaffMember if applicable
   staff            StaffMember?       @relation(fields: [staffId], references: [id], onDelete: SetNull)
   isActive         Boolean            @default(true)

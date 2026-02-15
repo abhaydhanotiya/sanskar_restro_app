@@ -43,13 +43,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         localStorage.setItem('authToken', data.token);
       }
 
-      // Start shift for staff members (not owners)
-      if (data.user.role !== 'OWNER') {
+      // Start attendance tracking for captain
+      if (data.user.role === 'CAPTAIN') {
         try {
           await apiClient.startShift(data.user.id);
-        } catch (shiftError) {
-          console.error('Failed to start shift:', shiftError);
-          // Continue with login even if shift start fails
+        } catch (err) {
+          console.error('Failed to start attendance:', err);
         }
       }
 
@@ -116,10 +115,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         {/* Note */}
         <div className="text-center">
             <div className="text-xs text-stone-500 mb-3">
-                <p className="font-semibold mb-2">Test Credentials:</p>
-                <p className="text-stone-400">Owner: <span className="font-mono">admin</span> / <span className="font-mono">admin123</span></p>
-                <p className="text-stone-400">Manager: <span className="font-mono">abhay</span> / <span className="font-mono">manager123</span></p>
-                <p className="text-stone-400">Staff: <span className="font-mono">chef</span> / <span className="font-mono">staff123</span></p>
+                <p className="font-semibold mb-2">Login Credentials:</p>
+                <p className="text-stone-400">Owner: <span className="font-mono">owner</span> / <span className="font-mono">owner123</span></p>
+                <p className="text-stone-400">Captain: <span className="font-mono">captain</span> / <span className="font-mono">captain123</span></p>
+                <p className="text-stone-400">Billing: <span className="font-mono">billing</span> / <span className="font-mono">billing123</span></p>
             </div>
         </div>
 

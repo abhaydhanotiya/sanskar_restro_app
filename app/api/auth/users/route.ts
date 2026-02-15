@@ -34,7 +34,7 @@ export async function POST(request: Request) {
         username: username.trim(),
         email: email?.trim(),
         password: hashedPassword,
-        role: role || 'STAFF',
+        role: role || 'CAPTAIN',
         staffId: staffId ? parseInt(staffId) : null,
       },
       include: {

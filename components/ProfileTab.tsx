@@ -12,20 +12,26 @@ import { useToast } from '@/contexts/ToastContext';
 interface ProfileTabProps {
   userName: string;
   userId: number;
-  shiftStartTime: Date;
+  loginTime: Date;
   onLogout: () => void;
+  userRole?: string;
 }
 
-export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftStartTime, onLogout }) => {
+export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, loginTime, onLogout, userRole }) => {
   const { t } = useLanguage();
   const { history } = useTables();
   const { staff } = useOwnerData();
   const { showToast } = useToast();
-  const [isEndingShift, setIsEndingShift] = useState(false);
   const [shiftStatus, setShiftStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Skip shift fetching for owners
+    if (userRole === 'OWNER') {
+      setLoading(false);
+      return;
+    }
+
     const fetchShiftStatus = async () => {
       try {
         const status = await apiClient.getShiftStatus(userId);
@@ -38,9 +44,9 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftS
     };
 
     fetchShiftStatus();
-    const interval = setInterval(fetchShiftStatus, 60000); // Update every minute
+    const interval = setInterval(fetchShiftStatus, 60000);
     return () => clearInterval(interval);
-  }, [userId]);
+  }, [userId, userRole]);
 
   const toDate = (value: string | Date | null | undefined) => {
     if (!value) return null;
@@ -55,8 +61,9 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftS
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   };
 
-  // Get online hours from backend shift status
-  const hoursWorked = shiftStatus?.hoursWorked ?? 0;
+  // Get online hours — fallback to time since login
+  const hoursWorked = shiftStatus?.hoursWorked ?? 
+    ((new Date().getTime() - loginTime.getTime()) / (1000 * 60 * 60));
 
   const today = new Date();
 
@@ -100,7 +107,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftS
         </div>
         <div>
           <h2 className="text-xl font-bold">{userName}</h2>
-          <p className="text-peach-light text-sm">Server • ID: #{staffMember?.id ?? '—'}</p>
+          <p className="text-peach-light text-sm">{userRole === 'OWNER' ? 'Owner' : userRole === 'BILLING' ? 'Billing' : 'Captain'} • ID: #{staffMember?.id ?? '—'}</p>
         </div>
       </div>
 
@@ -156,26 +163,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, shiftS
 
       {/* Logout */}
       <button 
-        onClick={async () => {
-          setIsEndingShift(true);
-          try {
-            // End shift first
-            await apiClient.endShift(userId);
-            showToast(t('shiftEnded') || 'Shift ended successfully', 'success');
-          } catch (error) {
-            console.error('Failed to end shift:', error);
-            showToast(t('shiftEndFailed') || 'Failed to end shift', 'error');
-          } finally {
-            setIsEndingShift(false);
-            // Logout anyway
-            onLogout();
-          }
-        }}
-        disabled={isEndingShift}
-        className="w-full mt-6 bg-red-50 text-red-600 font-bold py-3 rounded-xl border border-red-100 flex items-center justify-center hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={() => onLogout()}
+        className="w-full mt-6 bg-red-50 text-red-600 font-bold py-3 rounded-xl border border-red-100 flex items-center justify-center hover:bg-red-100 transition-colors"
       >
         <LogOut size={18} className="mr-2" />
-        {isEndingShift ? t('endingShift') || 'Ending Shift...' : t('endShift')}
+        {t('logout')}
       </button>
     </div>
   );

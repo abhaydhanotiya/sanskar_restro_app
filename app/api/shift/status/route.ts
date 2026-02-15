@@ -21,10 +21,11 @@ export async function GET(request: Request) {
     });
 
     if (!user || !user.staffId) {
-      return NextResponse.json(
-        { error: 'User not linked to staff member' },
-        { status: 404 }
-      );
+      return NextResponse.json({
+        hasShift: false,
+        message: 'User not linked to staff member',
+        hoursWorked: 0,
+      });
     }
 
     const today = new Date();

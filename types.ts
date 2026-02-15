@@ -6,7 +6,7 @@ export enum TabName {
   PROFILE = 'Profile',
 }
 
-export type UserRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'STAFF';
+export type UserRole = 'OWNER' | 'CAPTAIN' | 'BILLING';
 
 export interface User {
   id: number;

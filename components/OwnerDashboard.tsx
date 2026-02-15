@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
-import { LayoutDashboard, Users, History, TrendingUp, IndianRupee, ShoppingBag, LogOut, CalendarCheck, AlertCircle, Search, Filter, X, ChevronDown, FileText, Receipt, Calendar, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, Users, History, TrendingUp, IndianRupee, ShoppingBag, LogOut, CalendarCheck, AlertCircle, Search, Filter, X, ChevronDown, FileText, Receipt, Calendar, RefreshCw, Monitor, Store, Power } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTables } from '@/contexts/TablesContext';
 import { useOwnerData } from '@/hooks/useOwnerData';
@@ -10,15 +10,49 @@ import { OrderItem, OrderStatus, Transaction } from '@/types';
 
 interface OwnerDashboardProps {
   userName: string;
+  userId: number;
   onLogout: () => void;
+  onSwitchToManagerView: () => void;
 }
 
-export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, onLogout }) => {
+export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, userId, onLogout, onSwitchToManagerView }) => {
   const { t } = useLanguage();
   const { history } = useTables();
     const { staff, attendance, transactions, refreshData } = useOwnerData();
   const [activeTab, setActiveTab] = useState<'overview' | 'staff' | 'history'>('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRestroOpen, setIsRestroOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('restroOpen') === 'true';
+    }
+    return false;
+  });
+  const [restroOpenTime, setRestroOpenTime] = useState<Date | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('restroOpenTime');
+      return saved ? new Date(saved) : null;
+    }
+    return null;
+  });
+
+  const toggleRestro = () => {
+    if (isRestroOpen) {
+      setIsRestroOpen(false);
+      setRestroOpenTime(null);
+      localStorage.removeItem('restroOpen');
+      localStorage.removeItem('restroOpenTime');
+    } else {
+      const now = new Date();
+      setIsRestroOpen(true);
+      setRestroOpenTime(now);
+      localStorage.setItem('restroOpen', 'true');
+      localStorage.setItem('restroOpenTime', now.toISOString());
+    }
+  };
+
+  const restroHoursOpen = restroOpenTime
+    ? ((new Date().getTime() - restroOpenTime.getTime()) / (1000 * 60 * 60)).toFixed(1)
+    : '0.0';
 
     const toDate = (value: string | Date | null | undefined) => {
         if (!value) return null;
@@ -79,6 +113,45 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, onLogo
 
   const OverviewTab = () => (
     <div className="space-y-6 animate-fade-in">
+      {/* Restaurant Status Card */}
+      <div className={`p-4 rounded-2xl shadow-sm border flex items-center justify-between transition-all ${
+        isRestroOpen 
+          ? 'bg-green-50 border-green-200' 
+          : 'bg-red-50 border-red-200'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className={`p-3 rounded-xl ${
+            isRestroOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+          }`}>
+            <Store size={24} />
+          </div>
+          <div>
+            <h3 className={`font-bold text-lg ${
+              isRestroOpen ? 'text-green-800' : 'text-red-700'
+            }`}>
+              {isRestroOpen ? t('restroOpen') : t('restroClosed')}
+            </h3>
+            {isRestroOpen && (
+              <p className="text-green-600 text-xs font-medium">
+                Open for {restroHoursOpen}h
+                {restroOpenTime && ` • Since ${restroOpenTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+              </p>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={toggleRestro}
+          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-sm ${
+            isRestroOpen 
+              ? 'bg-red-500 text-white hover:bg-red-600'
+              : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
+        >
+          <Power size={16} />
+          {isRestroOpen ? t('restroClose') : t('openRestro')}
+        </button>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 flex items-center justify-between">
@@ -476,9 +549,18 @@ const handleRefresh = async () => {
                 <h1 className="text-2xl font-bold">{t('ownerDashboard')}</h1>
                 <p className="text-white/60 text-sm">Welcome, {userName}</p>
             </div>
-            <button onClick={onLogout} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors">
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={onSwitchToManagerView} 
+                className="bg-peach/90 text-brown-dark px-3 py-2 rounded-xl hover:bg-peach transition-colors flex items-center gap-1.5 text-xs font-bold shadow-sm"
+              >
+                <Monitor size={16} />
+                Manager View
+              </button>
+              <button onClick={onLogout} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors">
                 <LogOut size={20} />
-            </button>
+              </button>
+            </div>
         </div>
         
         {/* Navigation Tabs within Header */}

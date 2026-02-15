@@ -2,24 +2,32 @@
 
 import React from 'react';
 import { LayoutGrid, UtensilsCrossed, Receipt, User, ChefHat } from 'lucide-react';
-import { TabName } from '@/types';
+import { TabName, UserRole } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BottomNavProps {
   activeTab: TabName;
   onTabChange: (tab: TabName) => void;
+  userRole?: UserRole;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, userRole }) => {
   const { t } = useLanguage();
 
-  const navItems = [
+  const allNavItems = [
     { id: TabName.TABLES, label: t('tables'), icon: LayoutGrid },
     { id: TabName.MENU, label: t('menu'), icon: UtensilsCrossed },
     { id: TabName.KITCHEN, label: t('kitchen'), icon: ChefHat },
     { id: TabName.CHECKOUTS, label: t('checkouts'), icon: Receipt },
     { id: TabName.PROFILE, label: t('profile'), icon: User },
   ];
+
+  // Filter tabs based on role
+  const navItems = userRole === 'BILLING'
+    ? allNavItems.filter(item => [TabName.CHECKOUTS, TabName.PROFILE].includes(item.id))
+    : userRole === 'CAPTAIN'
+    ? allNavItems.filter(item => [TabName.TABLES, TabName.MENU, TabName.KITCHEN, TabName.PROFILE].includes(item.id))
+    : allNavItems; // OWNER sees all
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-[72px] bg-white/90 backdrop-blur-md border-t border-stone-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex justify-around items-center px-2 pb-2">
