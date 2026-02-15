@@ -3,10 +3,11 @@ export enum TabName {
   MENU = 'Menu',
   KITCHEN = 'Kitchen',
   CHECKOUTS = 'Checkouts',
+  ROOMS = 'Rooms',
   PROFILE = 'Profile',
 }
 
-export type UserRole = 'OWNER' | 'CAPTAIN' | 'BILLING';
+export type UserRole = 'OWNER' | 'CAPTAIN' | 'BILLING' | 'HOTEL_MANAGER';
 
 export interface User {
   id: number;
@@ -96,4 +97,76 @@ export interface AttendanceRecord {
   status: 'PRESENT' | 'ABSENT' | 'LEAVE' | 'LATE';
   checkIn?: string;
   checkOut?: string;
+}
+
+// --- Room Management ---
+
+export enum RoomStatus {
+  AVAILABLE = 'AVAILABLE',
+  OCCUPIED = 'OCCUPIED',
+  CHECKOUT = 'CHECKOUT',
+}
+
+export enum RoomType {
+  DELUXE = 'DELUXE',
+  PREMIUM_SUITE = 'PREMIUM_SUITE',
+  ROYAL_SUITE = 'ROYAL_SUITE',
+}
+
+export enum BookingStatus {
+  BOOKED = 'BOOKED',
+  CHECKED_IN = 'CHECKED_IN',
+  CHECKED_OUT = 'CHECKED_OUT',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum RoomItemCategory {
+  FOOD = 'FOOD',
+  AMENITY = 'AMENITY',
+}
+
+export interface Room {
+  id: number;
+  roomNumber: string;
+  type: RoomType;
+  floor: number;
+  capacity: number;
+  priceNonAC: number;
+  priceAC: number;
+  status: RoomStatus;
+  currentBooking?: RoomBooking | null;
+  bookings?: RoomBooking[];
+}
+
+export interface RoomBooking {
+  id: number;
+  roomId: number;
+  guestName: string;
+  guestPhone: string;
+  adults: number;
+  children: number;
+  isAC: boolean;
+  checkIn: string;
+  checkOut?: string | null;
+  totalAmount: number;
+  status: BookingStatus;
+  // Billing / GST fields
+  invoiceNo?: number | null;
+  gstEnabled?: boolean;
+  companyName?: string | null;
+  companyAddressLine1?: string | null;
+  companyAddressLine2?: string | null;
+  customerGstin?: string | null;
+  items?: RoomServiceItem[];
+  room?: Room;
+}
+
+export interface RoomServiceItem {
+  id: number;
+  bookingId: number;
+  name: string;
+  category: RoomItemCategory;
+  price: number;
+  quantity: number;
+  timestamp: string;
 }

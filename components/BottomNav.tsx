@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { LayoutGrid, UtensilsCrossed, Receipt, User, ChefHat } from 'lucide-react';
+import { LayoutGrid, UtensilsCrossed, Receipt, User, ChefHat, BedDouble } from 'lucide-react';
 import { TabName, UserRole } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -19,15 +19,22 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, us
     { id: TabName.MENU, label: t('menu'), icon: UtensilsCrossed },
     { id: TabName.KITCHEN, label: t('kitchen'), icon: ChefHat },
     { id: TabName.CHECKOUTS, label: t('checkouts'), icon: Receipt },
+    { id: TabName.ROOMS, label: t('rooms'), icon: BedDouble },
     { id: TabName.PROFILE, label: t('profile'), icon: User },
   ];
 
   // Filter tabs based on role
+  // Captain: restaurant only (tables, menu, kitchen)
+  // Billing: restaurant checkouts only
+  // Hotel Manager: rooms only
+  // Owner: everything (restaurant + rooms)
   const navItems = userRole === 'BILLING'
     ? allNavItems.filter(item => [TabName.CHECKOUTS, TabName.PROFILE].includes(item.id))
     : userRole === 'CAPTAIN'
     ? allNavItems.filter(item => [TabName.TABLES, TabName.MENU, TabName.KITCHEN, TabName.PROFILE].includes(item.id))
-    : allNavItems; // OWNER sees all
+    : userRole === 'HOTEL_MANAGER'
+    ? allNavItems.filter(item => [TabName.ROOMS, TabName.PROFILE].includes(item.id))
+    : allNavItems; // OWNER sees all (including rooms)
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-[72px] bg-white/90 backdrop-blur-md border-t border-stone-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex justify-around items-center px-2 pb-2">

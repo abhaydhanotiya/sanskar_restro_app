@@ -14,6 +14,7 @@ enum UserRole {
   OWNER
   CAPTAIN
   BILLING
+  HOTEL_MANAGER
 }
 
 model User {
@@ -128,4 +129,104 @@ enum AttendanceStatus {
   ABSENT
   LEAVE
   LATE
+}
+
+// --- Room Management ---
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  CHECKOUT
+}
+
+enum RoomType {
+  DELUXE
+  PREMIUM_SUITE
+  ROYAL_SUITE
+}
+
+enum BookingStatus {
+  BOOKED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum RoomItemCategory {
+  FOOD
+  AMENITY
+}
+
+model Room {
+  id             Int            @id @default(autoincrement())
+  roomNumber     String         @unique
+  type           RoomType       @default(DELUXE)
+  floor          Int            @default(1)
+  capacity       Int            @default(2)
+  priceNonAC     Float          // Price per night without AC
+  priceAC        Float          // Price per night with AC
+  status         RoomStatus     @default(AVAILABLE)
+  bookings       RoomBooking[]
+  maintenanceLogs RoomMaintenanceLog[]
+
+  @@map("rooms")
+}
+
+model RoomBooking {
+  id                  Int              @id @default(autoincrement())
+  roomId              Int
+  room                Room             @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  guestName           String
+  guestPhone          String
+  adults              Int              @default(1)
+  children            Int              @default(0)
+  isAC                Boolean          @default(false)  // Guest chose AC or non-AC
+  checkIn             DateTime         @default(now())
+  checkOut            DateTime?
+  totalAmount         Float            @default(0)
+  status              BookingStatus    @default(CHECKED_IN)
+  // Billing / GST fields
+  invoiceNo           Int?             // User-entered invoice number
+  gstEnabled          Boolean          @default(true)
+  companyName         String?
+  companyAddressLine1 String?
+  companyAddressLine2 String?
+  customerGstin       String?
+  items               RoomServiceItem[]
+
+  @@map("room_bookings")
+}
+
+model RoomServiceItem {
+  id             Int              @id @default(autoincrement())
+  bookingId      Int
+  booking        RoomBooking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  name           String
+  category       RoomItemCategory @default(AMENITY)
+  price          Float
+  quantity       Int              @default(1)
+  timestamp      DateTime         @default(now())
+
+  @@map("room_service_items")
+}
+
+// --- Room Maintenance ---
+
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+model RoomMaintenanceLog {
+  id             Int                @id @default(autoincrement())
+  roomId         Int
+  room           Room               @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  issue          String
+  notes          String?
+  status         MaintenanceStatus  @default(OPEN)
+  reportedAt     DateTime           @default(now())
+  resolvedAt     DateTime?
+
+  @@map("room_maintenance_logs")
 }

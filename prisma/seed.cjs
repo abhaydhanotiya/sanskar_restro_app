@@ -23,6 +23,10 @@ async function main() {
   /* ---------- CLEAN DATABASE ---------- */
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
+      "room_maintenance_logs",
+      "room_service_items",
+      "room_bookings",
+      "rooms",
       "attendance_records",
       "order_items",
       "transactions",
@@ -142,6 +146,7 @@ async function main() {
     data: [
       { name: 'Captain', role: 'Captain', avatar: '🧑‍🍳' },
       { name: 'Billing', role: 'Billing', avatar: '🧾' },
+      { name: 'Hotel Manager', role: 'Hotel Manager', avatar: '🏨' },
     ],
   });
 
@@ -151,6 +156,7 @@ async function main() {
   const ownerPassword = await bcrypt.hash('owner123', 10);
   const captainPassword = await bcrypt.hash('captain123', 10);
   const billingPassword = await bcrypt.hash('billing123', 10);
+  const hotelManagerPassword = await bcrypt.hash('manager123', 10);
 
   await prisma.user.createMany({
     data: [
@@ -177,10 +183,18 @@ async function main() {
         staffId: 2,
         isActive: true,
       },
+      {
+        username: 'manager',
+        email: 'manager@sanskar-restro.local',
+        password: hotelManagerPassword,
+        role: 'HOTEL_MANAGER',
+        staffId: 3,
+        isActive: true,
+      },
     ],
   });
 
-  console.log('✅ Users created (owner/owner123, captain/captain123, billing/billing123)');
+  console.log('✅ Users created (owner/owner123, captain/captain123, billing/billing123, manager/manager123)');
 
   /* ---------- ATTENDANCE ---------- */
   const today = new Date();
@@ -190,10 +204,61 @@ async function main() {
     data: [
       { staffId: 1, date: today, status: 'PRESENT', checkIn: new Date() },
       { staffId: 2, date: today, status: 'PRESENT', checkIn: new Date() },
+      { staffId: 3, date: today, status: 'PRESENT', checkIn: new Date() },
     ],
   });
 
   console.log('✅ Attendance marked');
+
+  /* ---------- ROOMS (36 total) ---------- */
+  // All rooms support both AC and non-AC — guest chooses at check-in
+  // Deluxe: ₹1200 non-AC / ₹1500 AC
+  // Premium Suite: ₹1500 non-AC / ₹1800 AC
+  // Royal Suite: ₹2000 non-AC / ₹2500 AC
+  const roomsData = [
+    // Ground Floor — 1 Deluxe
+    { roomNumber: '001', type: 'DELUXE', floor: 0, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    // Floor 1 — 101-115 (13 Deluxe + 2 Premium Suite)
+    { roomNumber: '101', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '102', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '103', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '104', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '105', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '106', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '107', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '108', type: 'PREMIUM_SUITE', floor: 1, capacity: 3, priceNonAC: 1500, priceAC: 1800 },
+    { roomNumber: '109', type: 'PREMIUM_SUITE', floor: 1, capacity: 3, priceNonAC: 1500, priceAC: 1800 },
+    { roomNumber: '110', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '111', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '112', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '113', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '114', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '115', type: 'DELUXE', floor: 1, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    // Floor 2 — 201-220 (18 Deluxe + 2 Royal Suite)
+    { roomNumber: '201', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '202', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '203', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '204', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '205', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '206', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '207', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '208', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '209', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '210', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '211', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '212', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '213', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '214', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '215', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '216', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '217', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '218', type: 'DELUXE', floor: 2, capacity: 2, priceNonAC: 1200, priceAC: 1500 },
+    { roomNumber: '219', type: 'ROYAL_SUITE', floor: 2, capacity: 4, priceNonAC: 2000, priceAC: 2500 },
+    { roomNumber: '220', type: 'ROYAL_SUITE', floor: 2, capacity: 4, priceNonAC: 2000, priceAC: 2500 },
+  ];
+  const rooms = await prisma.room.createMany({ data: roomsData });
+  console.log(`✅ Created ${rooms.count} rooms`);
+
   console.log('🎉 Database seeding completed successfully');
 }
 

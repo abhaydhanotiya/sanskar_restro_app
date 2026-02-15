@@ -8,6 +8,9 @@ async function main() {
   console.log('🌱 Starting database seed...');
 
   // Clear existing data
+  await prisma.roomServiceItem.deleteMany();
+  await prisma.roomBooking.deleteMany();
+  await prisma.room.deleteMany();
   await prisma.attendanceRecord.deleteMany();
   await prisma.orderItem.deleteMany();
   await prisma.transaction.deleteMany();
@@ -90,6 +93,54 @@ async function main() {
     ],
   });
   console.log('✅ Created attendance records');
+
+  // Seed Rooms (36 total)
+  // 32 Deluxe: 16 non-AC @₹1200, 16 AC @₹1500
+  // 2 Premium Suite (108, 109): non-AC @₹1500, AC @₹1800
+  // 2 Royal Suite (219, 220): non-AC @₹2000, AC @₹2500
+  const roomsData = [
+    // Ground Floor — 1 Deluxe
+    { roomNumber: '001', type: 'DELUXE', floor: 0, capacity: 2, isAC: false, pricePerNight: 1200 },
+    // Floor 1 — 101-115 (13 Deluxe + 2 Premium Suite)
+    { roomNumber: '101', type: 'DELUXE', floor: 1, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '102', type: 'DELUXE', floor: 1, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '103', type: 'DELUXE', floor: 1, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '104', type: 'DELUXE', floor: 1, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '105', type: 'DELUXE', floor: 1, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '106', type: 'DELUXE', floor: 1, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '107', type: 'DELUXE', floor: 1, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '108', type: 'PREMIUM_SUITE', floor: 1, capacity: 3, isAC: false, pricePerNight: 1500 },
+    { roomNumber: '109', type: 'PREMIUM_SUITE', floor: 1, capacity: 3, isAC: true,  pricePerNight: 1800 },
+    { roomNumber: '110', type: 'DELUXE', floor: 1, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '111', type: 'DELUXE', floor: 1, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '112', type: 'DELUXE', floor: 1, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '113', type: 'DELUXE', floor: 1, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '114', type: 'DELUXE', floor: 1, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '115', type: 'DELUXE', floor: 1, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    // Floor 2 — 201-220 (18 Deluxe + 2 Royal Suite)
+    { roomNumber: '201', type: 'DELUXE', floor: 2, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '202', type: 'DELUXE', floor: 2, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '203', type: 'DELUXE', floor: 2, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '204', type: 'DELUXE', floor: 2, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '205', type: 'DELUXE', floor: 2, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '206', type: 'DELUXE', floor: 2, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '207', type: 'DELUXE', floor: 2, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '208', type: 'DELUXE', floor: 2, capacity: 2, isAC: false, pricePerNight: 1200 },
+    { roomNumber: '209', type: 'DELUXE', floor: 2, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '210', type: 'DELUXE', floor: 2, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '211', type: 'DELUXE', floor: 2, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '212', type: 'DELUXE', floor: 2, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '213', type: 'DELUXE', floor: 2, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '214', type: 'DELUXE', floor: 2, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '215', type: 'DELUXE', floor: 2, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '216', type: 'DELUXE', floor: 2, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '217', type: 'DELUXE', floor: 2, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '218', type: 'DELUXE', floor: 2, capacity: 2, isAC: true,  pricePerNight: 1500 },
+    { roomNumber: '219', type: 'ROYAL_SUITE', floor: 2, capacity: 4, isAC: false, pricePerNight: 2000 },
+    { roomNumber: '220', type: 'ROYAL_SUITE', floor: 2, capacity: 4, isAC: true,  pricePerNight: 2500 },
+  ];
+  const rooms = await prisma.room.createMany({ data: roomsData as any });
+  console.log(`✅ Created ${rooms.count} rooms`);
 
   console.log('🎉 Database seeding completed!');
 }

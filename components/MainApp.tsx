@@ -10,6 +10,7 @@ import { MenuTab } from '@/components/MenuTab';
 import { CheckoutsTab } from '@/components/CheckoutsTab';
 import { ProfileTab } from '@/components/ProfileTab';
 import { KitchenTab } from '@/components/KitchenTab';
+import { RoomsTab } from '@/components/RoomsTab';
 import { TabName, UserRole, TableStatus, Table } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTables } from '@/contexts/TablesContext';
@@ -53,7 +54,7 @@ const RestaurantClosedScreen: React.FC<{ userName: string; onOpenRestro: () => v
 };
 
 const ServerApp: React.FC<{ userName: string; userId: number; userRole: UserRole; loginTime: Date; onLogout: () => void; isOwnerView?: boolean; onBackToDashboard?: () => void; isRestroOpen?: boolean; toggleRestro?: (onBlocked?: () => void) => void }> = ({ userName, userId, userRole, loginTime, onLogout, isOwnerView, onBackToDashboard, isRestroOpen, toggleRestro }) => {
-  const [activeTab, setActiveTab] = useState<TabName>(userRole === 'BILLING' ? TabName.CHECKOUTS : TabName.TABLES);
+  const [activeTab, setActiveTab] = useState<TabName>(userRole === 'BILLING' ? TabName.CHECKOUTS : userRole === 'HOTEL_MANAGER' ? TabName.ROOMS : TabName.TABLES);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -65,6 +66,8 @@ const ServerApp: React.FC<{ userName: string; userId: number; userRole: UserRole
         return <KitchenTab />;
       case TabName.CHECKOUTS:
         return <CheckoutsTab />;
+      case TabName.ROOMS:
+        return <RoomsTab />;
       case TabName.PROFILE:
         return <ProfileTab userName={userName} userId={userId} loginTime={loginTime} onLogout={onLogout} userRole={isOwnerView ? 'OWNER' : userRole} isRestroOpen={isRestroOpen} toggleRestro={toggleRestro} />;
       default:
@@ -200,6 +203,19 @@ export const MainApp: React.FC = () => {
         isRestroOpen={isRestroOpen}
         restroOpenTime={restroOpenTime}
         toggleRestro={toggleRestro}
+      />
+    );
+  }
+
+  // Hotel Manager — always allowed (rooms are independent of restaurant state)
+  if (user.role === 'HOTEL_MANAGER') {
+    return (
+      <ServerApp 
+        userName={user.name} 
+        userId={user.id} 
+        userRole={user.role} 
+        loginTime={user.loginTime} 
+        onLogout={handleLogout}
       />
     );
   }

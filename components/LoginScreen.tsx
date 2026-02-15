@@ -119,6 +119,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 <p className="text-stone-400">Owner: <span className="font-mono">owner</span> / <span className="font-mono">owner123</span></p>
                 <p className="text-stone-400">Captain: <span className="font-mono">captain</span> / <span className="font-mono">captain123</span></p>
                 <p className="text-stone-400">Billing: <span className="font-mono">billing</span> / <span className="font-mono">billing123</span></p>
+                <p className="text-stone-400">Hotel Manager: <span className="font-mono">manager</span> / <span className="font-mono">manager123</span></p>
             </div>
         </div>
 
