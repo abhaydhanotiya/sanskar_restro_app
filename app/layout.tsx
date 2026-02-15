@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Sanskar Restro Server",
-  description: "Restaurant management system for servers and owners",
+  title: "Sanskar Palace - Hotel & Resort",
+  description: "Hotel & Resort management system",
 };
 
 export default function RootLayout({

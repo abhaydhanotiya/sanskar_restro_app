@@ -82,7 +82,8 @@ export const CheckoutsTab: React.FC = () => {
         </head>
         <body>
           <div class="header">
-            <div class="logo">Sanskar Restro</div>
+            <div class="logo">Sanskar Palace</div>
+            <div style="font-size:10px;color:#888;letter-spacing:2px;">HOTEL &amp; RESORT</div>
             <div class="meta">Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
             <div class="meta">${isTakeaway ? 'Order Type: Takeaway' : 'Order Type: Dine In'}</div>
             <div class="meta">${isTakeaway ? 'Order' : 'Table'}: #${id}</div>

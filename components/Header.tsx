@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Bell, Clock, ArrowLeft, Shield } from 'lucide-react';
+import Image from 'next/image';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface HeaderProps {
@@ -49,8 +50,14 @@ export const Header: React.FC<HeaderProps> = ({ userName, isOwnerView, onBackToD
         </div>
       </div>
 
-      {/* Center: Title */}
-      <h1 className="text-lg font-bold tracking-tight text-white/90">{isOwnerView ? 'Manager View' : t('appTitle')}</h1>
+      {/* Center: Logo + Title */}
+      <div className="flex items-center gap-2">
+        <Image src="/logo.png" alt="Sanskar Palace" width={36} height={28} className="drop-shadow-md" />
+        <div className="flex flex-col items-center leading-none">
+          <h1 className="text-base font-bold tracking-tight text-white/90">{isOwnerView ? 'Manager View' : t('appTitle')}</h1>
+          {!isOwnerView && <span className="text-[8px] text-peach-light/70 tracking-[3px] uppercase font-medium">{t('appSubtitle')}</span>}
+        </div>
+      </div>
 
       {/* Right: Notifications */}
       <button className="relative p-2.5 rounded-full hover:bg-white/10 transition-colors active:scale-95">

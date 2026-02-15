@@ -3,7 +3,8 @@ export type Language = 'en' | 'hi';
 export const TRANSLATIONS = {
   en: {
     welcome: "Welcome",
-    appTitle: "Sanskar Restro",
+    appTitle: "Sanskar Palace",
+    appSubtitle: "Hotel & Resort",
     startShift: "Start Shift",
     enterName: "Enter Username",
     password: "Password",
@@ -206,7 +207,8 @@ export const TRANSLATIONS = {
   },
   hi: {
     welcome: "स्वागत है",
-    appTitle: "संस्कार रेस्टोरेंट",
+    appTitle: "संस्कार पैलेस",
+    appSubtitle: "होटल और रिसॉर्ट",
     startShift: "शिफ्ट शुरू करें",
     enterName: "उपयोगकर्ता नाम दर्ज करें",
     password: "पासवर्ड",

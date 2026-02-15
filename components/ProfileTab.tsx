@@ -156,7 +156,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, loginT
         </div>
         <div>
           <h2 className="text-xl font-bold">{userName}</h2>
-          <p className="text-peach-light text-sm">{roleLabel} • ID: #{staffMember?.id ?? '—'}</p>
+          <p className="text-peach-light text-sm">{roleLabel} • {staffMember?.name || userName}</p>
         </div>
       </div>
 

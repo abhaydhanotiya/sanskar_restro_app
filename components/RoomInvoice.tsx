@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Printer, Building2, FileText, Receipt } from 'lucide-react';
+import { X, Printer, Building2, FileText, Receipt, Download } from 'lucide-react';
 import { RoomBooking, RoomServiceItem, Room } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -169,6 +169,8 @@ export const BillingDetailsModal: React.FC<{
 // Business details from the sample invoice
 const BUSINESS = {
   name: 'Sanskar Palace',
+  subtitle: 'Hotel & Resort',
+  logo: '/logo.png',
   address: '649/2, Garoth Road, Shamgarh',
   email: 'sanskarpalace2024@gmail.com',
   phone: '9425924420',
@@ -209,7 +211,7 @@ export const RoomInvoice: React.FC<{
 
   items.forEach(item => {
     lineItems.push({
-      description: `${item.name}${item.category === 'AMENITY' ? ' (Amenity)' : ''}`,
+      description: `${item.name}${item.category === 'AMENITY' ? ' (Amenity - GST Incl.)' : ''}`,
       qty: item.quantity,
       unitPrice: item.price,
       total: item.price * item.quantity,
@@ -217,228 +219,301 @@ export const RoomInvoice: React.FC<{
   });
 
   const subtotal = lineItems.reduce((s, i) => s + i.total, 0);
+  // GST only on room charges + food items; packaged amenities already include GST
+  const amenityTotal = items.filter(i => i.category === 'AMENITY').reduce((s, i) => s + i.price * i.quantity, 0);
+  const taxableAmount = subtotal - amenityTotal;
   const gstRate = gstEnabled ? GST_RATE : 0;
-  const cgst = Math.round(subtotal * gstRate) / 100;
-  const sgst = Math.round(subtotal * gstRate) / 100;
+  const cgst = Math.round(taxableAmount * gstRate) / 100;
+  const sgst = Math.round(taxableAmount * gstRate) / 100;
   const grandTotal = Math.round(subtotal + cgst + sgst);
   const roundOff = grandTotal - (subtotal + cgst + sgst);
 
   const invoiceDate = checkOut.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+  const checkInDate = checkIn.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  const checkOutDate = checkOut.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  // Shared print CSS used by both iframe print and screen preview
+  const printCSS = `
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1a1a1a; background: white; }
+    .invoice-page { max-width: 700px; margin: 0 auto; padding: 12px 16px; }
+    .inv-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 8px; border-bottom: 3px solid #D84315; margin-bottom: 8px; }
+    .inv-brand { display: flex; align-items: center; gap: 8px; }
+    .inv-brand img { width: 48px; height: 40px; object-fit: contain; }
+    .inv-brand-text h1 { font-size: 18px; color: #D84315; font-weight: 800; letter-spacing: -0.5px; margin: 0; line-height: 1.1; }
+    .inv-brand-text .subtitle { font-size: 8px; color: #888; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; }
+    .inv-brand-text p { font-size: 9px; color: #666; line-height: 1.4; margin-top: 1px; }
+    .inv-brand-text a { color: #D84315; text-decoration: none; }
+    .inv-title { text-align: right; }
+    .inv-title h2 { font-size: 20px; color: #D84315; font-weight: 800; letter-spacing: 1px; }
+    .inv-title .gstin { font-size: 8px; color: #888; margin-top: 1px; letter-spacing: 0.5px; }
+    .inv-meta { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+    .inv-meta-box { flex: 1; min-width: 100px; background: #FFF3E0; padding: 5px 8px; border-radius: 4px; border-left: 3px solid #D84315; }
+    .inv-meta-box .label { font-size: 7px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    .inv-meta-box .value { font-size: 11px; font-weight: 700; color: #333; margin-top: 0; }
+    .inv-section { margin-bottom: 8px; }
+    .inv-section-title { font-size: 8px; color: #D84315; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 3px; border-bottom: 1px solid #FFE0B2; padding-bottom: 2px; }
+    .inv-billto p { font-size: 10px; color: #333; line-height: 1.5; }
+    .inv-billto .guest-name { font-weight: 700; font-size: 12px; }
+    .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 10px; }
+    .inv-table thead th { background: #D84315; color: white; padding: 5px 6px; font-size: 8px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+    .inv-table thead th:first-child { text-align: left; border-radius: 3px 0 0 0; }
+    .inv-table thead th:last-child { border-radius: 0 3px 0 0; }
+    .inv-table thead th.r { text-align: right; }
+    .inv-table thead th.c { text-align: center; }
+    .inv-table tbody td { padding: 4px 6px; border-bottom: 1px solid #f0f0f0; }
+    .inv-table tbody td.r { text-align: right; }
+    .inv-table tbody td.c { text-align: center; }
+    .inv-table tbody tr:nth-child(even) { background: #FAFAFA; }
+    .inv-table tbody td.item-name { font-weight: 500; }
+    .inv-table tbody td.gst-incl { font-size: 8px; color: #888; font-style: italic; }
+    .inv-footer-grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .inv-terms { flex: 1; min-width: 160px; font-size: 8px; color: #888; }
+    .inv-terms h4 { color: #D84315; font-size: 8px; margin-bottom: 2px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .inv-terms p { line-height: 1.4; }
+    .inv-signature { text-align: center; margin-top: 16px; }
+    .inv-signature .for-line { font-size: 8px; color: #555; margin-bottom: 20px; font-weight: 600; }
+    .inv-signature .sig-line { font-size: 8px; color: #555; border-top: 1px solid #999; padding-top: 3px; display: inline-block; min-width: 130px; }
+    .inv-totals { width: 220px; min-width: 180px; }
+    .inv-totals .row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 10px; }
+    .inv-totals .row .lbl { color: #666; }
+    .inv-totals .row .val { font-weight: 600; }
+    .inv-totals .row.sub { color: #888; font-size: 9px; font-style: italic; }
+    .inv-totals .divider { border-top: 1px dashed #ddd; margin: 2px 0; }
+    .inv-totals .grand { display: flex; justify-content: space-between; background: #D84315; color: white; padding: 6px 8px; border-radius: 4px; margin-top: 4px; font-size: 13px; font-weight: 800; }
+    .inv-jurisdiction { text-align: center; font-size: 7px; color: #aaa; margin-top: 8px; padding-top: 5px; border-top: 1px solid #eee; letter-spacing: 0.5px; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .invoice-page { padding: 8px 12px; }
+    }
+  `;
 
   const handlePrint = () => {
     const printContent = printRef.current;
     if (!printContent) return;
 
-    const printWindow = window.open('', '_blank', 'width=800,height=1000');
-    if (!printWindow) return;
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invoice #${displayInvoiceNo} — ${BUSINESS.name}</title>
+  <style>${printCSS}</style>
+</head>
+<body>${printContent.innerHTML}</body>
+</html>`;
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Invoice #${displayInvoiceNo} — ${BUSINESS.name}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1a1a1a; }
-          .invoice { max-width: 700px; margin: 0 auto; padding: 24px; }
-          .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 3px solid #E65100; padding-bottom: 12px; }
-          .header-left h1 { font-size: 28px; color: #E65100; font-weight: 800; margin-bottom: 2px; }
-          .header-left h2 { font-size: 18px; color: #E65100; margin-bottom: 4px; }
-          .header-left p { font-size: 11px; color: #555; line-height: 1.6; }
-          .header-left a { color: #E65100; text-decoration: none; }
-          .header-right { text-align: right; }
-          .header-right img { width: 80px; height: 80px; }
-          .invoice-meta { display: flex; justify-content: space-between; margin-bottom: 16px; }
-          .meta-box { background: #f9f9f9; padding: 8px 12px; border-radius: 4px; border: 1px solid #e0e0e0; }
-          .meta-box span { font-size: 11px; color: #888; }
-          .meta-box strong { font-size: 13px; display: block; }
-          .bill-to { margin-bottom: 16px; }
-          .bill-to h3 { color: #E65100; font-size: 13px; margin-bottom: 4px; }
-          .bill-to p { font-size: 12px; color: #333; line-height: 1.5; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-          thead th { background: #E65100; color: white; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
-          thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4) { text-align: right; }
-          tbody td { padding: 8px 10px; font-size: 12px; border-bottom: 1px solid #eee; }
-          tbody td:nth-child(2), tbody td:nth-child(3), tbody td:nth-child(4) { text-align: right; }
-          .totals { display: flex; justify-content: flex-end; }
-          .totals-table { width: 280px; }
-          .totals-table .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; }
-          .totals-table .row.grand { background: #E65100; color: white; padding: 8px 12px; font-size: 15px; font-weight: 800; border-radius: 4px; margin-top: 4px; }
-          .totals-table .row span:first-child { color: #555; }
-          .totals-table .row.grand span:first-child { color: white; }
-          .totals-table .divider { border-top: 1px solid #ddd; margin: 4px 0; }
-          .footer { margin-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #eee; padding-top: 12px; }
-          .footer-left { font-size: 10px; color: #888; }
-          .footer-left h4 { color: #E65100; font-size: 11px; margin-bottom: 2px; }
-          .footer-right { text-align: center; }
-          .footer-right p { font-size: 10px; color: #555; margin-top: 4px; }
-          .jurisdiction { text-align: center; font-size: 10px; color: #888; margin-top: 12px; border-top: 1px solid #eee; padding-top: 8px; }
-          @media print {
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .invoice { padding: 12px; }
-          }
-        </style>
-      </head>
-      <body>
-        ${printContent.innerHTML}
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
+    // Use hidden iframe — works on mobile browsers that block window.open
+    let iframe = document.getElementById('print-iframe') as HTMLIFrameElement | null;
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'print-iframe';
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+    }
+
+    const iframeDoc = iframe.contentWindow?.document;
+    if (!iframeDoc) return;
+
+    iframeDoc.open();
+    iframeDoc.write(html);
+    iframeDoc.close();
+
     setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 500);
+      try {
+        iframe!.contentWindow?.print();
+      } catch {
+        window.print();
+      }
+    }, 400);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center animate-fade-in p-4" onClick={onClose}>
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center animate-fade-in" onClick={onClose}>
+      <div className="bg-white w-full max-w-2xl sm:rounded-2xl rounded-t-3xl shadow-2xl overflow-hidden max-h-[95vh] sm:max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-b border-stone-200">
-          <h3 className="font-bold text-brown-dark">Tax Invoice #{displayInvoiceNo}</h3>
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white shrink-0">
+          <div className="flex items-center gap-2">
+            <FileText size={18} />
+            <div>
+              <h3 className="font-bold text-sm leading-tight">Tax Invoice #{displayInvoiceNo}</h3>
+              <p className="text-[10px] text-orange-100">{BUSINESS.name} • {invoiceDate}</p>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-600 text-white text-sm font-bold hover:bg-orange-700 active:scale-95 transition-all"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/20 text-white text-xs font-bold hover:bg-white/30 active:scale-95 transition-all backdrop-blur-sm"
             >
-              <Printer size={16} /> Print
+              <Printer size={14} /> Print
             </button>
-            <button onClick={onClose} className="p-2 rounded-xl hover:bg-stone-200 transition-colors">
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/20 transition-colors">
               <X size={18} />
             </button>
           </div>
         </div>
 
         {/* Invoice Content (printable area) */}
-        <div className="overflow-y-auto flex-1 p-4">
+        <div className="overflow-y-auto flex-1">
+          {/* Inject print CSS into preview via style tag */}
+          <style dangerouslySetInnerHTML={{ __html: printCSS }} />
           <div ref={printRef}>
-            <div className="invoice">
+            <div className="invoice-page">
               {/* Header */}
-              <div className="header">
-                <div className="header-left">
-                  <h1 style={{ color: '#E65100', fontSize: '22px', fontWeight: 800 }}>Tax Invoice</h1>
-                  <h2 style={{ color: '#E65100', fontSize: '16px', margin: '4px 0' }}>{BUSINESS.name}</h2>
-                  <p style={{ fontSize: '11px', color: '#555', lineHeight: '1.6' }}>
-                    {BUSINESS.address}<br />
-                    <a href={`mailto:${BUSINESS.email}`} style={{ color: '#E65100', textDecoration: 'none' }}>{BUSINESS.email}</a><br />
-                    {BUSINESS.phone}<br />
-                    {BUSINESS.gstin}
+              <div className="inv-header">
+                <div className="inv-brand">
+                  <img src={BUSINESS.logo} alt={BUSINESS.name} />
+                  <div className="inv-brand-text">
+                    <h1>{BUSINESS.name}</h1>
+                    <div className="subtitle">{BUSINESS.subtitle}</div>
+                    <p>
+                      {BUSINESS.address}<br />
+                      <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a> • {BUSINESS.phone}
+                    </p>
+                  </div>
+                </div>
+                <div className="inv-title">
+                  <h2>TAX INVOICE</h2>
+                  <p className="gstin">GSTIN: {BUSINESS.gstin}</p>
+                </div>
+              </div>
+
+              {/* Invoice Meta Cards */}
+              <div className="inv-meta">
+                <div className="inv-meta-box">
+                  <div className="label">Invoice No.</div>
+                  <div className="value">{displayInvoiceNo}</div>
+                </div>
+                <div className="inv-meta-box">
+                  <div className="label">Invoice Date</div>
+                  <div className="value">{invoiceDate}</div>
+                </div>
+                <div className="inv-meta-box">
+                  <div className="label">Check-in</div>
+                  <div className="value">{checkInDate}</div>
+                </div>
+                <div className="inv-meta-box">
+                  <div className="label">Check-out</div>
+                  <div className="value">{checkOutDate}</div>
+                </div>
+              </div>
+
+              {/* Bill To */}
+              <div className="inv-section">
+                <div className="inv-section-title">Bill To</div>
+                <div className="inv-billto">
+                  <p>
+                    <span className="guest-name">{booking.guestName}</span><br />
+                    {customerDetails?.companyName && <>{customerDetails.companyName}<br /></>}
+                    {customerDetails?.companyAddressLine1 && <>{customerDetails.companyAddressLine1}<br /></>}
+                    {customerDetails?.companyAddressLine2 && <>{customerDetails.companyAddressLine2}<br /></>}
+                    {customerDetails?.customerGstin && <>GSTIN: {customerDetails.customerGstin}<br /></>}
+                    {booking.guestPhone && <>Mobile: {booking.guestPhone}</>}
                   </p>
                 </div>
               </div>
 
-              {/* Invoice Meta — INVOICE NO. | Invoice Date + Due Date */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <div style={{ background: '#f9f9f9', padding: '8px 12px', borderRadius: '4px', border: '1px solid #e0e0e0' }}>
-                  <span style={{ fontSize: '10px', color: '#888' }}>INVOICE NO.</span>
-                  <strong style={{ display: 'block', fontSize: '14px' }}>{displayInvoiceNo}</strong>
-                </div>
-                <div style={{ background: '#f9f9f9', padding: '8px 12px', borderRadius: '4px', border: '1px solid #e0e0e0', textAlign: 'right' as const }}>
-                  <div><span style={{ fontSize: '10px', color: '#888' }}>Invoice Date: </span><strong style={{ fontSize: '11px' }}>{invoiceDate}</strong></div>
-                  <div><span style={{ fontSize: '10px', color: '#888' }}>Due Date:</span></div>
-                </div>
-              </div>
-
-              {/* Bill To — matching sample format */}
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ color: '#E65100', fontSize: '12px', marginBottom: '4px', fontWeight: 700 }}>BILL TO</h3>
-                <p style={{ fontSize: '12px', color: '#333', lineHeight: '1.8' }}>
-                  {booking.guestName}<br />
-                  {customerDetails?.companyName && <>{customerDetails.companyName}<br /></>}
-                  {customerDetails?.companyAddressLine1 && <>{customerDetails.companyAddressLine1}<br /></>}
-                  {customerDetails?.companyAddressLine2 && <>{customerDetails.companyAddressLine2}<br /></>}
-                  {customerDetails?.customerGstin && <>Gst No. {customerDetails.customerGstin}<br /></>}
-                  {booking.guestPhone && <>Mobile: {booking.guestPhone}</>}
-                </p>
-              </div>
-
               {/* Items Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px' }}>
+              <table className="inv-table">
                 <thead>
                   <tr>
-                    <th style={{ background: '#E65100', color: 'white', padding: '8px 10px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>Description</th>
-                    <th style={{ background: '#E65100', color: 'white', padding: '8px 10px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>Qty</th>
-                    <th style={{ background: '#E65100', color: 'white', padding: '8px 10px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>Unit Price</th>
-                    <th style={{ background: '#E65100', color: 'white', padding: '8px 10px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>Total</th>
+                    <th style={{ width: '5%' }} className="c">#</th>
+                    <th style={{ width: '50%' }}>Description</th>
+                    <th className="c" style={{ width: '10%' }}>Qty</th>
+                    <th className="r" style={{ width: '17%' }}>Rate</th>
+                    <th className="r" style={{ width: '18%' }}>Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {lineItems.map((item, idx) => (
                     <tr key={idx}>
-                      <td style={{ padding: '8px 10px', fontSize: '12px', borderBottom: '1px solid #eee' }}>{item.description}</td>
-                      <td style={{ padding: '8px 10px', fontSize: '12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{item.qty}</td>
-                      <td style={{ padding: '8px 10px', fontSize: '12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>₹ {item.unitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                      <td style={{ padding: '8px 10px', fontSize: '12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>₹ {item.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                    </tr>
-                  ))}
-                  {/* Empty rows to match sample */}
-                  {lineItems.length < 6 && Array.from({ length: 6 - lineItems.length }).map((_, idx) => (
-                    <tr key={`empty-${idx}`}>
-                      <td style={{ padding: '8px 10px', borderBottom: '1px solid #eee' }}>&nbsp;</td>
-                      <td style={{ padding: '8px 10px', borderBottom: '1px solid #eee' }}></td>
-                      <td style={{ padding: '8px 10px', borderBottom: '1px solid #eee' }}></td>
-                      <td style={{ padding: '8px 10px', borderBottom: '1px solid #eee' }}></td>
+                      <td className="c" style={{ color: '#999', fontSize: '10px' }}>{idx + 1}</td>
+                      <td className="item-name">{item.description}</td>
+                      <td className="c">{item.qty}</td>
+                      <td className="r">₹{item.unitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                      <td className="r" style={{ fontWeight: 600 }}>₹{item.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              {/* Footer with Totals */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                {/* Left side — Terms & Signature */}
-                <div style={{ fontSize: '10px', color: '#888', maxWidth: '240px' }}>
-                  <h4 style={{ color: '#E65100', fontSize: '11px', marginBottom: '2px', fontWeight: 700 }}>Terms &amp; Instructions</h4>
-                  <p style={{ lineHeight: '1.5', marginBottom: '16px' }}>Payment Mode: UPI + Cash</p>
-                  <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '10px', color: '#555', marginBottom: '28px' }}>FOR M/S {BUSINESS.name.toUpperCase()}</p>
-                    <p style={{ fontSize: '10px', color: '#555', borderTop: '1px solid #ccc', paddingTop: '4px' }}>Seal &amp; Signature</p>
+              {/* Footer: Terms + Totals side by side */}
+              <div className="inv-footer-grid">
+                {/* Left — Terms & Signature */}
+                <div className="inv-terms">
+                  <h4>Terms & Instructions</h4>
+                  <p>Payment Mode: UPI / Cash<br />Thank you for staying with us!</p>
+                  <div className="inv-signature">
+                    <p className="for-line">FOR M/S {BUSINESS.name.toUpperCase()}</p>
+                    <p className="sig-line">Authorised Signatory</p>
                   </div>
                 </div>
 
-                {/* Right side — Totals */}
-                <div style={{ width: '260px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                    <span style={{ color: '#555' }}>SUBTOTAL</span>
-                    <span>₹ {subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                {/* Right — Totals */}
+                <div className="inv-totals">
+                  <div className="row">
+                    <span className="lbl">Subtotal</span>
+                    <span className="val">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                    <span style={{ color: '#555' }}>DISCOUNT</span>
-                    <span>₹ -</span>
+                  {amenityTotal > 0 && (
+                    <div className="row sub">
+                      <span className="lbl">Amenities (GST Incl.)</span>
+                      <span>₹{amenityTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+                  <div className="divider"></div>
+                  <div className="row">
+                    <span className="lbl">Taxable Amount</span>
+                    <span className="val">₹{taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                    <span style={{ color: '#555' }}>SUBTOTAL LESS DISCOUNT</span>
-                    <span>₹ -</span>
+                  <div className="row">
+                    <span className="lbl">CGST @ {gstRate}%</span>
+                    <span className="val">₹{cgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                    <span style={{ color: '#555' }}>CGST @ {gstRate}%</span>
-                    <span>₹ {cgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <div className="row">
+                    <span className="lbl">SGST @ {gstRate}%</span>
+                    <span className="val">₹{sgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                    <span style={{ color: '#555' }}>SGST @ {gstRate}%</span>
-                    <span>₹ {sgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                    <span style={{ color: '#555' }}>Received Balance</span>
-                    <span>₹ -</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>
-                    <span style={{ color: '#555', fontStyle: 'italic' }}>Round-off</span>
-                    <span>₹ {roundOff !== 0 ? roundOff.toFixed(2) : '-'}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', fontSize: '15px', fontWeight: 800, background: '#E65100', color: 'white', borderRadius: '4px', marginTop: '4px' }}>
+                  {roundOff !== 0 && (
+                    <div className="row sub">
+                      <span className="lbl">Round-off</span>
+                      <span>₹{roundOff.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="grand">
                     <span>GRAND TOTAL</span>
-                    <span>₹ {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>                </div>
+                    <span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
               </div>
 
               {/* Jurisdiction */}
-              <div style={{ textAlign: 'center', fontSize: '10px', color: '#888', marginTop: '12px', borderTop: '1px solid #eee', paddingTop: '8px' }}>
-                SUBJECT TO {BUSINESS.jurisdiction} JURISDICTION<br />
-                This is a Computer Generated Invoice
+              <div className="inv-jurisdiction">
+                SUBJECT TO {BUSINESS.jurisdiction} JURISDICTION &nbsp;•&nbsp; This is a Computer Generated Invoice
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Bottom action bar (mobile friendly) */}
+        <div className="shrink-0 px-4 py-3 bg-stone-50 border-t border-stone-200 flex gap-2 sm:hidden">
+          <button
+            onClick={handlePrint}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-orange-600 text-white font-bold text-sm active:scale-95 transition-all shadow-md"
+          >
+            <Printer size={16} /> Print Invoice
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-3 rounded-2xl bg-stone-200 text-stone-600 font-bold text-sm active:scale-95 transition-all"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   ArrowLeft, BedDouble, Phone, Users, IndianRupee, Plus,
-  UtensilsCrossed, Droplets, Clock, LogOut, Package, Snowflake, Fan, Printer
+  UtensilsCrossed, Droplets, Clock, LogOut, Package, Snowflake, Fan
 } from 'lucide-react';
 import { Room, RoomBooking, RoomServiceItem, RoomItemCategory, RoomStatus } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -159,7 +159,6 @@ export const RoomDetailView: React.FC<{ room: Room; onBack: () => void }> = ({ r
   const [checkingOut, setCheckingOut] = useState(false);
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [showBillingForm, setShowBillingForm] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'print' | 'checkout' | null>(null);
 
   const fetchRoom = useCallback(async () => {
     try {
@@ -219,32 +218,14 @@ export const RoomDetailView: React.FC<{ room: Room; onBack: () => void }> = ({ r
     }
   };
 
-  const handlePrintInvoice = () => {
-    if (!booking) return;
-    setPendingAction('print');
-    setShowBillingForm(true);
-  };
-
   const handleCheckoutClick = () => {
     if (!booking) return;
-    setPendingAction('checkout');
     setShowBillingForm(true);
   };
 
   const handleBillingSubmit = (details: CustomerDetails) => {
     setShowBillingForm(false);
-    if (pendingAction === 'print') {
-      if (!booking) return;
-      setInvoiceData({
-        booking: { ...booking, items },
-        room,
-        invoiceNo: details.invoiceNo,
-        customerDetails: details,
-      });
-    } else if (pendingAction === 'checkout') {
-      handleCheckout(details);
-    }
-    setPendingAction(null);
+    handleCheckout(details);
   };
 
   // Calculate revenue
@@ -393,16 +374,9 @@ export const RoomDetailView: React.FC<{ room: Room; onBack: () => void }> = ({ r
           </div>
         )}
 
-        {/* Print Bill & Checkout Buttons */}
+        {/* Checkout Button — no print until checked out */}
         {booking && (
           <div className="space-y-2">
-            <button
-              onClick={handlePrintInvoice}
-              className="w-full py-3 rounded-2xl bg-orange-50 text-orange-600 font-bold text-sm flex items-center justify-center gap-2 border border-orange-200 hover:bg-orange-100 active:scale-95 transition-all"
-            >
-              <Printer size={16} />
-              {t('printBill')} — ₹{grandTotal.toLocaleString('en-IN')}
-            </button>
             <button
               onClick={handleCheckoutClick}
               disabled={checkingOut}
@@ -436,7 +410,7 @@ export const RoomDetailView: React.FC<{ room: Room; onBack: () => void }> = ({ r
       {showBillingForm && (
         <BillingDetailsModal
           onSubmit={handleBillingSubmit}
-          onClose={() => { setShowBillingForm(false); setPendingAction(null); }}
+          onClose={() => setShowBillingForm(false)}
         />
       )}
 

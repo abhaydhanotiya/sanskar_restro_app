@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ChefHat, AlertCircle, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
 import { UserRole } from '@/types';
 import { apiClient } from '@/lib/api-client';
 
@@ -65,10 +66,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     <div className="min-h-screen bg-bg-light flex flex-col items-center justify-center p-6 animate-fade-in">
       {/* App Logo & Title */}
       <div className="flex flex-col items-center mb-10">
-        <div className="w-20 h-20 bg-brown rounded-full flex items-center justify-center shadow-lg mb-4">
-          <ChefHat size={40} className="text-white" />
-        </div>
-        <h1 className="text-4xl font-bold text-brown-dark tracking-tight text-center">{t('appTitle')}</h1>
+        <Image src="/logo.png" alt="Sanskar Palace" width={160} height={120} className="mb-2 drop-shadow-lg" priority />
+        <h1 className="text-3xl font-bold text-brown-dark tracking-tight text-center">{t('appTitle')}</h1>
+        <p className="text-sm text-stone-400 font-medium tracking-widest uppercase">{t('appSubtitle')}</p>
       </div>
 
       {/* Login Form */}
