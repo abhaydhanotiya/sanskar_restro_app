@@ -111,6 +111,8 @@ export const TRANSLATIONS = {
     restroClose: "Close Restaurant",
     restroClosed: "Restaurant Closed",
     openRestro: "Open Restaurant",
+    openRestroMessage: "Open the restaurant to start taking orders and serving customers.",
+    restroCloseBlocked: "Cannot close — tables are still active",
     completed: "Completed",
   },
   hi: {
@@ -222,6 +224,8 @@ export const TRANSLATIONS = {
     restroClose: "रेस्टोरेंट बंद करें",
     restroClosed: "रेस्टोरेंट बंद है",
     openRestro: "रेस्टोरेंट खोलें",
+    openRestroMessage: "ऑर्डर लेना और ग्राहकों की सेवा शुरू करने के लिए रेस्टोरेंट खोलें।",
+    restroCloseBlocked: "बंद नहीं कर सकते — टेबल अभी भी सक्रिय हैं",
     completed: "पूर्ण हुआ",
   }
 };

@@ -19,9 +19,10 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const counterRef = React.useRef(0);
 
   const showToast = useCallback((message: string, type: ToastType = 'success') => {
-    const id = Date.now();
+    const id = Date.now() * 1000 + (counterRef.current++ % 1000);
     setToasts(prev => [...prev, { id, message, type }]);
     
     // Auto remove after 3 seconds

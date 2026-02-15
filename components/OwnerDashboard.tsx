@@ -6,6 +6,7 @@ import { LayoutDashboard, Users, History, TrendingUp, IndianRupee, ShoppingBag, 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTables } from '@/contexts/TablesContext';
 import { useOwnerData } from '@/hooks/useOwnerData';
+import { useToast } from '@/contexts/ToastContext';
 import { OrderItem, OrderStatus, Transaction } from '@/types';
 
 interface OwnerDashboardProps {
@@ -13,42 +14,18 @@ interface OwnerDashboardProps {
   userId: number;
   onLogout: () => void;
   onSwitchToManagerView: () => void;
+  isRestroOpen: boolean;
+  restroOpenTime: Date | null;
+  toggleRestro: (onBlocked?: () => void) => void;
 }
 
-export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, userId, onLogout, onSwitchToManagerView }) => {
+export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, userId, onLogout, onSwitchToManagerView, isRestroOpen, restroOpenTime, toggleRestro }) => {
   const { t } = useLanguage();
   const { history } = useTables();
     const { staff, attendance, transactions, refreshData } = useOwnerData();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'overview' | 'staff' | 'history'>('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isRestroOpen, setIsRestroOpen] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('restroOpen') === 'true';
-    }
-    return false;
-  });
-  const [restroOpenTime, setRestroOpenTime] = useState<Date | null>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('restroOpenTime');
-      return saved ? new Date(saved) : null;
-    }
-    return null;
-  });
-
-  const toggleRestro = () => {
-    if (isRestroOpen) {
-      setIsRestroOpen(false);
-      setRestroOpenTime(null);
-      localStorage.removeItem('restroOpen');
-      localStorage.removeItem('restroOpenTime');
-    } else {
-      const now = new Date();
-      setIsRestroOpen(true);
-      setRestroOpenTime(now);
-      localStorage.setItem('restroOpen', 'true');
-      localStorage.setItem('restroOpenTime', now.toISOString());
-    }
-  };
 
   const restroHoursOpen = restroOpenTime
     ? ((new Date().getTime() - restroOpenTime.getTime()) / (1000 * 60 * 60)).toFixed(1)
@@ -140,7 +117,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ userName, userId
           </div>
         </div>
         <button
-          onClick={toggleRestro}
+          onClick={() => toggleRestro(() => showToast(t('restroCloseBlocked'), 'error'))}
           className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-sm ${
             isRestroOpen 
               ? 'bg-red-500 text-white hover:bg-red-600'

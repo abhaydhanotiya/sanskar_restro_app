@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { LogOut, Settings, Award, Clock, ListOrdered } from 'lucide-react';
+import { LogOut, Settings, Award, Clock, ListOrdered, Store, Power } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOwnerData } from '@/hooks/useOwnerData';
@@ -15,9 +15,11 @@ interface ProfileTabProps {
   loginTime: Date;
   onLogout: () => void;
   userRole?: string;
+  isRestroOpen?: boolean;
+  toggleRestro?: (onBlocked?: () => void) => void;
 }
 
-export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, loginTime, onLogout, userRole }) => {
+export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, loginTime, onLogout, userRole, isRestroOpen, toggleRestro }) => {
   const { t } = useLanguage();
   const { history } = useTables();
   const { staff } = useOwnerData();
@@ -144,6 +146,41 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, loginT
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Restaurant Status Toggle */}
+      {toggleRestro && (
+        <div className={`p-4 rounded-2xl shadow-sm border flex items-center justify-between transition-all mb-6 ${
+          isRestroOpen 
+            ? 'bg-green-50 border-green-200' 
+            : 'bg-red-50 border-red-200'
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl ${
+              isRestroOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+            }`}>
+              <Store size={20} />
+            </div>
+            <div>
+              <h3 className={`font-bold text-sm ${
+                isRestroOpen ? 'text-green-800' : 'text-red-700'
+              }`}>
+                {isRestroOpen ? t('restroOpen') : t('restroClosed')}
+              </h3>
+            </div>
+          </div>
+          <button
+            onClick={() => toggleRestro?.(() => showToast(t('restroCloseBlocked'), 'error'))}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-sm ${
+              isRestroOpen 
+                ? 'bg-red-500 text-white hover:bg-red-600'
+                : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
+          >
+            <Power size={14} />
+            {isRestroOpen ? t('restroClose') : t('openRestro')}
+          </button>
+        </div>
+      )}
 
       {/* Settings List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
