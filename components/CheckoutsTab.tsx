@@ -272,7 +272,7 @@ export const CheckoutsTab: React.FC = () => {
                  </div>
                  <button onClick={() => setSelectedBill(null)}><X size={20}/></button>
               </div>
-              <div className="p-4 overflow-y-auto">
+              <div className="p-4 overflow-y-auto flex-1 min-h-0">
                  <div className="space-y-3">
                     {selectedBill.items.map(item => (
                        <div key={item.id} className={`flex justify-between items-center p-3 rounded-lg border ${item.status === OrderStatus.VOID ? 'bg-red-50 border-red-100' : 'bg-stone-50 border-stone-100'}`}>
@@ -298,7 +298,7 @@ export const CheckoutsTab: React.FC = () => {
                     <span className="font-black text-2xl text-brown-dark">₹{selectedBill.total.toFixed(2)}</span>
                  </div>
               </div>
-              <div className="p-4 border-t border-stone-100 flex gap-3">
+              <div className="p-4 border-t border-stone-100 flex gap-3 shrink-0">
                  <button onClick={() => setSelectedBill(null)} className="flex-1 py-3 bg-stone-100 text-stone-600 font-bold rounded-xl hover:bg-stone-200">
                     {t('close')}
                  </button>

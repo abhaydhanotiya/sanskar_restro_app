@@ -34,7 +34,7 @@ export const GuestCountModal: React.FC<GuestCountModalProps> = ({ table, onClose
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-brown-dark/40 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white w-full sm:max-w-sm sm:rounded-3xl rounded-t-3xl overflow-hidden shadow-2xl transform transition-all animate-slide-up">
+      <div className="bg-white w-full sm:max-w-sm sm:rounded-3xl rounded-t-3xl overflow-hidden shadow-2xl transform transition-all animate-slide-up max-h-[90vh] overflow-y-auto">
         <div className="bg-white p-5 border-b border-stone-100 flex justify-between items-center">
           <div className="flex items-center gap-3 text-brown-dark">
             <div className="bg-peach/20 p-2 rounded-full">

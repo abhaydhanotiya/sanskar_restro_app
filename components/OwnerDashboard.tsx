@@ -513,7 +513,7 @@ const handleRefresh = async () => {
                         </div>
                         <button onClick={() => setSelectedTxn(null)}><X size={20}/></button>
                     </div>
-                    <div className="p-4 overflow-y-auto">
+                    <div className="p-4 overflow-y-auto flex-1 min-h-0">
                         <div className="space-y-3">
                             {selectedTxn.items.map(item => (
                             <div key={item.id} className="flex justify-between items-center p-3 rounded-lg border bg-stone-50 border-stone-100">
@@ -535,7 +535,7 @@ const handleRefresh = async () => {
                             <span className="font-black text-2xl text-brown-dark">₹{selectedTxn.totalAmount.toFixed(2)}</span>
                         </div>
                     </div>
-                    <div className="p-4 border-t border-stone-100">
+                    <div className="p-4 border-t border-stone-100 shrink-0">
                         <button onClick={() => setSelectedTxn(null)} className="w-full py-3 bg-stone-100 text-stone-600 font-bold rounded-xl hover:bg-stone-200">
                             {t('close')}
                         </button>
@@ -979,8 +979,8 @@ const handleRefresh = async () => {
   return (
     <div className="min-h-screen bg-stone-50 text-brown-dark font-sans pb-20">
       {/* Owner Header */}
-      <header className="bg-brown-dark text-white p-6 rounded-b-3xl shadow-lg mb-6 sticky top-0 z-50">
-        <div className="flex justify-between items-center mb-6">
+      <header className="bg-brown-dark text-white p-4 sm:p-6 rounded-b-3xl shadow-lg mb-4 sm:mb-6 sticky top-0 z-50">
+        <div className="flex justify-between items-center mb-3 sm:mb-6">
             <div>
                 <h1 className="text-2xl font-bold">{t('ownerDashboard')}</h1>
                 <p className="text-white/60 text-sm">Welcome, {userName}</p>
