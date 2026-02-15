@@ -234,57 +234,101 @@ export const RoomInvoice: React.FC<{
 
   // Shared print CSS used by both iframe print and screen preview
   const printCSS = `
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    @page { size: A4; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1a1a1a; background: white; }
-    .invoice-page { max-width: 700px; margin: 0 auto; padding: 12px 16px; }
-    .inv-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 8px; border-bottom: 3px solid #D84315; margin-bottom: 8px; }
-    .inv-brand { display: flex; align-items: center; gap: 8px; }
-    .inv-brand img { width: 48px; height: 40px; object-fit: contain; }
-    .inv-brand-text h1 { font-size: 18px; color: #D84315; font-weight: 800; letter-spacing: -0.5px; margin: 0; line-height: 1.1; }
-    .inv-brand-text .subtitle { font-size: 8px; color: #888; letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; }
-    .inv-brand-text p { font-size: 9px; color: #666; line-height: 1.4; margin-top: 1px; }
-    .inv-brand-text a { color: #D84315; text-decoration: none; }
+    body { font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1e293b; background: white; font-size: 13px; }
+
+    .invoice-page {
+      width: 210mm; min-height: 297mm; margin: 0 auto;
+      padding: 28px 32px 20px; display: flex; flex-direction: column;
+    }
+
+    /* ── Top accent bar ── */
+    .inv-accent { height: 6px; background: linear-gradient(90deg, #ea580c, #f97316, #fdba74); border-radius: 0 0 4px 4px; margin: -28px -32px 20px; }
+
+    /* ── Header ── */
+    .inv-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .inv-brand { display: flex; align-items: center; gap: 14px; }
+    .inv-brand img { width: 64px; height: 54px; object-fit: contain; }
+    .inv-brand-text h1 { font-size: 26px; color: #ea580c; font-weight: 900; letter-spacing: -0.8px; line-height: 1; }
+    .inv-brand-text .subtitle { font-size: 10px; color: #94a3b8; letter-spacing: 4px; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+    .inv-brand-text .contact { font-size: 11px; color: #64748b; line-height: 1.5; margin-top: 6px; }
+    .inv-brand-text .contact a { color: #ea580c; text-decoration: none; font-weight: 600; }
     .inv-title { text-align: right; }
-    .inv-title h2 { font-size: 20px; color: #D84315; font-weight: 800; letter-spacing: 1px; }
-    .inv-title .gstin { font-size: 8px; color: #888; margin-top: 1px; letter-spacing: 0.5px; }
-    .inv-meta { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
-    .inv-meta-box { flex: 1; min-width: 100px; background: #FFF3E0; padding: 5px 8px; border-radius: 4px; border-left: 3px solid #D84315; }
-    .inv-meta-box .label { font-size: 7px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-    .inv-meta-box .value { font-size: 11px; font-weight: 700; color: #333; margin-top: 0; }
-    .inv-section { margin-bottom: 8px; }
-    .inv-section-title { font-size: 8px; color: #D84315; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 3px; border-bottom: 1px solid #FFE0B2; padding-bottom: 2px; }
-    .inv-billto p { font-size: 10px; color: #333; line-height: 1.5; }
-    .inv-billto .guest-name { font-weight: 700; font-size: 12px; }
-    .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 10px; }
-    .inv-table thead th { background: #D84315; color: white; padding: 5px 6px; font-size: 8px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
-    .inv-table thead th:first-child { text-align: left; border-radius: 3px 0 0 0; }
-    .inv-table thead th:last-child { border-radius: 0 3px 0 0; }
+    .inv-title h2 { font-size: 28px; font-weight: 900; color: #ea580c; letter-spacing: 2px; line-height: 1; }
+    .inv-title .gstin-badge { display: inline-block; margin-top: 8px; background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.5px; }
+
+    /* ── Divider ── */
+    .inv-divider { height: 1px; background: linear-gradient(90deg, #ea580c, #fdba74, transparent); margin-bottom: 16px; }
+
+    /* ── Meta grid ── */
+    .inv-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+    .inv-meta-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 10px; position: relative; overflow: hidden; }
+    .inv-meta-box::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #ea580c; border-radius: 3px 0 0 3px; }
+    .inv-meta-box .label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+    .inv-meta-box .value { font-size: 13px; font-weight: 800; color: #1e293b; margin-top: 4px; }
+
+    /* ── Two-column info row ── */
+    .inv-info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 18px; }
+    .inv-section { }
+    .inv-section-title { font-size: 10px; color: #ea580c; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid #fed7aa; }
+    .inv-billto p { font-size: 12px; color: #475569; line-height: 1.7; }
+    .inv-billto .guest-name { font-weight: 800; font-size: 15px; color: #1e293b; }
+    .inv-from p { font-size: 12px; color: #475569; line-height: 1.7; }
+    .inv-from .biz-name { font-weight: 800; font-size: 15px; color: #1e293b; }
+
+    /* ── Items Table ── */
+    .inv-table-wrap { flex: 1; margin-bottom: 18px; }
+    .inv-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+    .inv-table thead th { background: #1e293b; color: white; padding: 10px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .inv-table thead th:first-child { border-radius: 8px 0 0 0; }
+    .inv-table thead th:last-child { border-radius: 0 8px 0 0; }
     .inv-table thead th.r { text-align: right; }
     .inv-table thead th.c { text-align: center; }
-    .inv-table tbody td { padding: 4px 6px; border-bottom: 1px solid #f0f0f0; }
-    .inv-table tbody td.r { text-align: right; }
+    .inv-table tbody td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+    .inv-table tbody td.r { text-align: right; font-variant-numeric: tabular-nums; }
     .inv-table tbody td.c { text-align: center; }
-    .inv-table tbody tr:nth-child(even) { background: #FAFAFA; }
-    .inv-table tbody td.item-name { font-weight: 500; }
-    .inv-table tbody td.gst-incl { font-size: 8px; color: #888; font-style: italic; }
-    .inv-footer-grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-    .inv-terms { flex: 1; min-width: 160px; font-size: 8px; color: #888; }
-    .inv-terms h4 { color: #D84315; font-size: 8px; margin-bottom: 2px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-    .inv-terms p { line-height: 1.4; }
-    .inv-signature { text-align: center; margin-top: 16px; }
-    .inv-signature .for-line { font-size: 8px; color: #555; margin-bottom: 20px; font-weight: 600; }
-    .inv-signature .sig-line { font-size: 8px; color: #555; border-top: 1px solid #999; padding-top: 3px; display: inline-block; min-width: 130px; }
-    .inv-totals { width: 220px; min-width: 180px; }
-    .inv-totals .row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 10px; }
-    .inv-totals .row .lbl { color: #666; }
-    .inv-totals .row .val { font-weight: 600; }
-    .inv-totals .row.sub { color: #888; font-size: 9px; font-style: italic; }
-    .inv-totals .divider { border-top: 1px dashed #ddd; margin: 2px 0; }
-    .inv-totals .grand { display: flex; justify-content: space-between; background: #D84315; color: white; padding: 6px 8px; border-radius: 4px; margin-top: 4px; font-size: 13px; font-weight: 800; }
-    .inv-jurisdiction { text-align: center; font-size: 7px; color: #aaa; margin-top: 8px; padding-top: 5px; border-top: 1px solid #eee; letter-spacing: 0.5px; }
+    .inv-table tbody tr:nth-child(even) { background: #f8fafc; }
+    .inv-table tbody tr:hover { background: #fff7ed; }
+    .inv-table tbody td.item-name { font-weight: 600; color: #334155; }
+    .inv-table tbody td .amenity-tag { display: inline-block; font-size: 8px; color: #ea580c; background: #fff7ed; border: 1px solid #fed7aa; padding: 1px 6px; border-radius: 10px; margin-left: 6px; font-weight: 600; vertical-align: middle; }
+    .inv-table tbody td.row-num { color: #94a3b8; font-size: 11px; font-weight: 600; }
+    .inv-table tbody td.amount { font-weight: 700; color: #1e293b; }
+
+    /* ── Footer grid ── */
+    .inv-footer-grid { display: grid; grid-template-columns: 1fr 280px; gap: 24px; padding-top: 0; }
+    .inv-terms { font-size: 11px; color: #94a3b8; }
+    .inv-terms h4 { color: #475569; font-size: 11px; margin-bottom: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    .inv-terms p { line-height: 1.6; }
+    .inv-terms .payment-modes { display: flex; gap: 6px; margin-top: 6px; }
+    .inv-terms .mode-badge { display: inline-block; background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+    .inv-signature { margin-top: 24px; text-align: center; }
+    .inv-signature .for-line { font-size: 10px; color: #64748b; margin-bottom: 32px; font-weight: 700; letter-spacing: 0.5px; }
+    .inv-signature .sig-line { font-size: 10px; color: #64748b; border-top: 2px solid #cbd5e1; padding-top: 6px; display: inline-block; min-width: 160px; font-weight: 600; }
+
+    /* ── Totals ── */
+    .inv-totals { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 18px; }
+    .inv-totals .row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 12px; }
+    .inv-totals .row .lbl { color: #64748b; font-weight: 500; }
+    .inv-totals .row .val { font-weight: 700; color: #1e293b; font-variant-numeric: tabular-nums; }
+    .inv-totals .row.sub { color: #94a3b8; font-size: 11px; }
+    .inv-totals .row.sub .val { font-weight: 500; }
+    .inv-totals .divider { border-top: 1px dashed #cbd5e1; margin: 6px 0; }
+    .inv-totals .grand { display: flex; justify-content: space-between; background: linear-gradient(135deg, #ea580c, #f97316); color: white; padding: 12px 16px; border-radius: 8px; margin-top: 8px; font-size: 16px; font-weight: 900; letter-spacing: 0.5px; }
+
+    /* ── Bottom bar ── */
+    .inv-bottom { margin-top: auto; padding-top: 12px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 9px; color: #94a3b8; letter-spacing: 1px; display: flex; flex-direction: column; gap: 4px; }
+    .inv-bottom .jurisdiction { font-weight: 700; text-transform: uppercase; }
+    .inv-bottom .generated { font-style: italic; }
+
     @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .invoice-page { padding: 8px 12px; }
+      html, body { width: 210mm; height: 297mm; }
+      body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .invoice-page { width: 210mm; min-height: 297mm; padding: 28px 32px 20px; }
+    }
+    @media screen {
+      .invoice-page { min-height: auto; width: 100%; max-width: 210mm; }
     }
   `;
 
@@ -298,6 +342,9 @@ export const RoomInvoice: React.FC<{
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Invoice #${displayInvoiceNo} — ${BUSINESS.name}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>${printCSS}</style>
 </head>
 <body>${printContent.innerHTML}</body>
@@ -364,6 +411,9 @@ export const RoomInvoice: React.FC<{
           <style dangerouslySetInnerHTML={{ __html: printCSS }} />
           <div ref={printRef}>
             <div className="invoice-page">
+              {/* Top accent gradient bar */}
+              <div className="inv-accent"></div>
+
               {/* Header */}
               <div className="inv-header">
                 <div className="inv-brand">
@@ -371,23 +421,26 @@ export const RoomInvoice: React.FC<{
                   <div className="inv-brand-text">
                     <h1>{BUSINESS.name}</h1>
                     <div className="subtitle">{BUSINESS.subtitle}</div>
-                    <p>
+                    <div className="contact">
                       {BUSINESS.address}<br />
-                      <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a> • {BUSINESS.phone}
-                    </p>
+                      <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a> &bull; {BUSINESS.phone}
+                    </div>
                   </div>
                 </div>
                 <div className="inv-title">
                   <h2>TAX INVOICE</h2>
-                  <p className="gstin">GSTIN: {BUSINESS.gstin}</p>
+                  <div className="gstin-badge">GSTIN: {BUSINESS.gstin}</div>
                 </div>
               </div>
+
+              {/* Divider */}
+              <div className="inv-divider"></div>
 
               {/* Invoice Meta Cards */}
               <div className="inv-meta">
                 <div className="inv-meta-box">
                   <div className="label">Invoice No.</div>
-                  <div className="value">{displayInvoiceNo}</div>
+                  <div className="value">#{displayInvoiceNo}</div>
                 </div>
                 <div className="inv-meta-box">
                   <div className="label">Invoice Date</div>
@@ -403,51 +456,74 @@ export const RoomInvoice: React.FC<{
                 </div>
               </div>
 
-              {/* Bill To */}
-              <div className="inv-section">
-                <div className="inv-section-title">Bill To</div>
-                <div className="inv-billto">
-                  <p>
-                    <span className="guest-name">{booking.guestName}</span><br />
-                    {customerDetails?.companyName && <>{customerDetails.companyName}<br /></>}
-                    {customerDetails?.companyAddressLine1 && <>{customerDetails.companyAddressLine1}<br /></>}
-                    {customerDetails?.companyAddressLine2 && <>{customerDetails.companyAddressLine2}<br /></>}
-                    {customerDetails?.customerGstin && <>GSTIN: {customerDetails.customerGstin}<br /></>}
-                    {booking.guestPhone && <>Mobile: {booking.guestPhone}</>}
-                  </p>
+              {/* Two-column: Bill To + From */}
+              <div className="inv-info-row">
+                <div className="inv-section">
+                  <div className="inv-section-title">Bill To</div>
+                  <div className="inv-billto">
+                    <p>
+                      <span className="guest-name">{booking.guestName}</span><br />
+                      {customerDetails?.companyName && <>{customerDetails.companyName}<br /></>}
+                      {customerDetails?.companyAddressLine1 && <>{customerDetails.companyAddressLine1}<br /></>}
+                      {customerDetails?.companyAddressLine2 && <>{customerDetails.companyAddressLine2}<br /></>}
+                      {customerDetails?.customerGstin && <>GSTIN: {customerDetails.customerGstin}<br /></>}
+                      {booking.guestPhone && <>Mobile: {booking.guestPhone}</>}
+                    </p>
+                  </div>
+                </div>
+                <div className="inv-section">
+                  <div className="inv-section-title">From</div>
+                  <div className="inv-from">
+                    <p>
+                      <span className="biz-name">{BUSINESS.name}</span><br />
+                      {BUSINESS.address}<br />
+                      GSTIN: {BUSINESS.gstin}<br />
+                      Phone: {BUSINESS.phone}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Items Table */}
-              <table className="inv-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '5%' }} className="c">#</th>
-                    <th style={{ width: '50%' }}>Description</th>
-                    <th className="c" style={{ width: '10%' }}>Qty</th>
-                    <th className="r" style={{ width: '17%' }}>Rate</th>
-                    <th className="r" style={{ width: '18%' }}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lineItems.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="c" style={{ color: '#999', fontSize: '10px' }}>{idx + 1}</td>
-                      <td className="item-name">{item.description}</td>
-                      <td className="c">{item.qty}</td>
-                      <td className="r">₹{item.unitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                      <td className="r" style={{ fontWeight: 600 }}>₹{item.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              {/* Items Table — stretches to fill page */}
+              <div className="inv-table-wrap">
+                <table className="inv-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '5%' }} className="c">#</th>
+                      <th style={{ width: '45%' }}>Description</th>
+                      <th className="c" style={{ width: '12%' }}>Qty</th>
+                      <th className="r" style={{ width: '18%' }}>Rate</th>
+                      <th className="r" style={{ width: '20%' }}>Amount</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {lineItems.map((item, idx) => (
+                      <tr key={idx}>
+                        <td className="c row-num">{idx + 1}</td>
+                        <td className="item-name">
+                          {item.description.replace(' (Amenity - GST Incl.)', '')}
+                          {item.description.includes('Amenity') && <span className="amenity-tag">GST Incl.</span>}
+                        </td>
+                        <td className="c">{item.qty}</td>
+                        <td className="r">₹{item.unitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                        <td className="r amount">₹{item.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-              {/* Footer: Terms + Totals side by side */}
+              {/* Footer: Terms + Totals */}
               <div className="inv-footer-grid">
                 {/* Left — Terms & Signature */}
                 <div className="inv-terms">
                   <h4>Terms & Instructions</h4>
-                  <p>Payment Mode: UPI / Cash<br />Thank you for staying with us!</p>
+                  <p>Thank you for staying with us!</p>
+                  <div className="payment-modes">
+                    <span className="mode-badge">UPI</span>
+                    <span className="mode-badge">Cash</span>
+                    <span className="mode-badge">Card</span>
+                  </div>
                   <div className="inv-signature">
                     <p className="for-line">FOR M/S {BUSINESS.name.toUpperCase()}</p>
                     <p className="sig-line">Authorised Signatory</p>
@@ -463,7 +539,7 @@ export const RoomInvoice: React.FC<{
                   {amenityTotal > 0 && (
                     <div className="row sub">
                       <span className="lbl">Amenities (GST Incl.)</span>
-                      <span>₹{amenityTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      <span className="val">₹{amenityTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   <div className="divider"></div>
@@ -482,7 +558,7 @@ export const RoomInvoice: React.FC<{
                   {roundOff !== 0 && (
                     <div className="row sub">
                       <span className="lbl">Round-off</span>
-                      <span>₹{roundOff.toFixed(2)}</span>
+                      <span className="val">₹{roundOff.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="grand">
@@ -492,9 +568,10 @@ export const RoomInvoice: React.FC<{
                 </div>
               </div>
 
-              {/* Jurisdiction */}
-              <div className="inv-jurisdiction">
-                SUBJECT TO {BUSINESS.jurisdiction} JURISDICTION &nbsp;•&nbsp; This is a Computer Generated Invoice
+              {/* Bottom bar — pushed to bottom via flex */}
+              <div className="inv-bottom">
+                <div className="jurisdiction">Subject to {BUSINESS.jurisdiction} jurisdiction</div>
+                <div className="generated">This is a Computer Generated Invoice</div>
               </div>
             </div>
           </div>

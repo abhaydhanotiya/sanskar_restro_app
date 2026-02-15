@@ -64,6 +64,44 @@ class ApiClient {
     });
   }
 
+  async createMenuItem(item: any) {
+    return this.request('/menu', {
+      method: 'POST',
+      body: JSON.stringify(item),
+    });
+  }
+
+  async deleteMenuItem(id: number) {
+    return this.request(`/menu/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Rooms
+  async getRooms() {
+    return this.request('/rooms');
+  }
+
+  async updateRoom(id: number, updates: any) {
+    return this.request(`/rooms/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async createRoom(room: any) {
+    return this.request('/rooms', {
+      method: 'POST',
+      body: JSON.stringify(room),
+    });
+  }
+
+  async deleteRoom(id: number) {
+    return this.request(`/rooms/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Transactions
   async getTransactions() {
     return this.request('/transactions');

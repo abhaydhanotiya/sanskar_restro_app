@@ -20,3 +20,18 @@ export async function PATCH(
     return NextResponse.json({ error: 'Failed to update menu item' }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: idParam } = await params;
+    const id = parseInt(idParam);
+    await prisma.menuItem.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting menu item:', error);
+    return NextResponse.json({ error: 'Failed to delete menu item' }, { status: 500 });
+  }
+}
