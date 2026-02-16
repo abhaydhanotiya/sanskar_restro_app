@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BedDouble, Plus, Users, IndianRupee, Wrench, Snowflake, Fan, History, Clock, Printer, ArrowLeft, Pencil } from 'lucide-react';
 import { Room, RoomBooking, RoomStatus, RoomType } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useToast } from '@/contexts/ToastContext';
 import { RoomDetailView } from './RoomDetailView';
 import { RoomMaintenanceView } from './RoomMaintenanceView';
 import { RoomInvoice, BillingDetailsModal, InvoiceData, CustomerDetails } from './RoomInvoice';
@@ -12,7 +13,7 @@ import { RoomCard } from './RoomCard';
 // --- Check-In Modal ---
 const CheckInModal: React.FC<{
   room: Room;
-  onConfirm: (data: { guestName: string; guestPhone: string; adults: number; children: number; isAC: boolean }) => void;
+  onConfirm: (data: { guestName: string; guestPhone: string; adults: number; children: number; isAC: boolean; pricePerNightMrp: number; pricePerNightSelling: number; pricePerNightBill: number; extraGuests: number; extraBeddingIncluded: boolean; extraBeddingChargePerNight: number }) => void;
   onClose: () => void;
 }> = ({ room, onConfirm, onClose }) => {
   const { t } = useLanguage();
@@ -21,10 +22,35 @@ const CheckInModal: React.FC<{
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [isAC, setIsAC] = useState(true);
+  const [priceMrp, setPriceMrp] = useState('');
+  const [priceSelling, setPriceSelling] = useState('');
+  const [priceBill, setPriceBill] = useState('');
+  const [extraGuests, setExtraGuests] = useState(0);
+  const [extraBeddingIncluded, setExtraBeddingIncluded] = useState(true);
+  const [extraBeddingChargePerNight, setExtraBeddingChargePerNight] = useState('0');
+
+  useEffect(() => {
+    const defaultPrice = isAC ? room.priceAC : room.priceNonAC;
+    setPriceMrp(String(defaultPrice));
+    setPriceSelling(String(defaultPrice));
+    setPriceBill(String(defaultPrice));
+  }, [room.priceAC, room.priceNonAC, isAC]);
 
   const handleSubmit = () => {
     if (!guestName.trim()) return;
-    onConfirm({ guestName: guestName.trim(), guestPhone: guestPhone.trim(), adults, children, isAC });
+    onConfirm({
+      guestName: guestName.trim(),
+      guestPhone: guestPhone.trim(),
+      adults,
+      children,
+      isAC,
+      pricePerNightMrp: parseFloat(priceMrp) || 0,
+      pricePerNightSelling: parseFloat(priceSelling) || 0,
+      pricePerNightBill: parseFloat(priceBill) || 0,
+      extraGuests,
+      extraBeddingIncluded,
+      extraBeddingChargePerNight: parseFloat(extraBeddingChargePerNight) || 0,
+    });
   };
 
   return (
@@ -108,6 +134,93 @@ const CheckInModal: React.FC<{
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-stone-500 mb-1 block">{t('roomPriceMrp')} (₹)</label>
+            <input
+              value={priceMrp}
+              onChange={e => setPriceMrp(e.target.value)}
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-peach/50"
+              placeholder="0"
+              type="number"
+              min="0"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-stone-500 mb-1 block">{t('roomPriceSelling')} (₹)</label>
+            <input
+              value={priceSelling}
+              onChange={e => setPriceSelling(e.target.value)}
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-peach/50"
+              placeholder="0"
+              type="number"
+              min="0"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-stone-500 mb-1 block">{t('extraGuests')}</label>
+            <input
+              value={extraGuests}
+              onChange={e => setExtraGuests(Math.max(0, parseInt(e.target.value) || 0))}
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-peach/50"
+              placeholder="0"
+              type="number"
+              min="0"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-stone-500 mb-1 block">{t('extraBedding')}</label>
+            <div className="flex rounded-xl border border-stone-200 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setExtraBeddingIncluded(true)}
+                className={`flex-1 py-2.5 text-xs font-semibold transition-all ${
+                  extraBeddingIncluded ? 'bg-stone-700 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'
+                }`}
+              >
+                {t('included')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setExtraBeddingIncluded(false)}
+                className={`flex-1 py-2.5 text-xs font-semibold transition-all ${
+                  !extraBeddingIncluded ? 'bg-orange-600 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'
+                }`}
+              >
+                {t('charged')}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {!extraBeddingIncluded && (
+          <div>
+            <label className="text-xs font-semibold text-stone-500 mb-1 block">{t('extraBeddingChargePerNight')} (₹)</label>
+            <input
+              value={extraBeddingChargePerNight}
+              onChange={e => setExtraBeddingChargePerNight(e.target.value)}
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-peach/50"
+              placeholder="0"
+              type="number"
+              min="0"
+            />
+          </div>
+        )}
+        <div>
+          <label className="text-xs font-semibold text-stone-500 mb-1 block">{t('roomPriceBill')} (₹)</label>
+          <input
+            value={priceBill}
+            onChange={e => setPriceBill(e.target.value)}
+            className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-peach/50"
+            placeholder="0"
+            type="number"
+            min="0"
+          />
+        </div>
+
         <div className="flex gap-3 pt-2 pb-6 sm:pb-0">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-stone-600 font-semibold text-sm">
             {t('cancel')}
@@ -128,7 +241,7 @@ const CheckInModal: React.FC<{
 // --- Main RoomsTab ---
 export const RoomsTab: React.FC = () => {
   const { t } = useLanguage();
-
+  const { showToast } = useToast();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
@@ -197,18 +310,26 @@ export const RoomsTab: React.FC = () => {
     }
   };
 
-  const handleCheckIn = async (data: { guestName: string; guestPhone: string; adults: number; children: number; isAC: boolean }) => {
+  const handleCheckIn = async (data: { guestName: string; guestPhone: string; adults: number; children: number; isAC: boolean; pricePerNightMrp: number; pricePerNightSelling: number; pricePerNightBill: number; extraGuests: number; extraBeddingIncluded: boolean; extraBeddingChargePerNight: number }) => {
     if (!checkInRoom) return;
     try {
-      await fetch(`/api/rooms/${checkInRoom.id}/bookings`, {
+      const res = await fetch(`/api/rooms/${checkInRoom.id}/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Check-in API error:', res.status, err);
+        showToast(err.error || `Check-in failed (${res.status})`, 'error');
+        return;
+      }
       setCheckInRoom(null);
       fetchRooms();
-    } catch {
-      console.error('Check-in failed');
+      showToast(t('roomCheckIn') + ' ✓', 'success');
+    } catch (e) {
+      console.error('Check-in failed:', e);
+      showToast('Check-in failed — network error', 'error');
     }
   };
 

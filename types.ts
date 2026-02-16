@@ -149,6 +149,12 @@ export interface RoomBooking {
   checkIn: string;
   checkOut?: string | null;
   totalAmount: number;
+  pricePerNightMrp?: number | null;
+  pricePerNightSelling?: number | null;
+  pricePerNightBill?: number | null;
+  extraGuests?: number | null;
+  extraBeddingIncluded?: boolean | null;
+  extraBeddingChargePerNight?: number | null;
   status: BookingStatus;
   // Billing / GST fields
   invoiceNo?: number | null;

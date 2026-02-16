@@ -184,6 +184,12 @@ model RoomBooking {
   checkIn             DateTime         @default(now())
   checkOut            DateTime?
   totalAmount         Float            @default(0)
+  pricePerNightMrp     Float?
+  pricePerNightSelling Float?
+  pricePerNightBill    Float?
+  extraGuests          Int?             @default(0)
+  extraBeddingIncluded Boolean?         @default(true)
+  extraBeddingChargePerNight Float?
   status              BookingStatus    @default(CHECKED_IN)
   // Billing / GST fields
   invoiceNo           Int?             // User-entered invoice number

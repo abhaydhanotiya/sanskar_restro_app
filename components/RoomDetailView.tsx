@@ -243,7 +243,9 @@ export const RoomDetailView: React.FC<{
   const nights = booking
     ? Math.max(1, Math.ceil((Date.now() - new Date(booking.checkIn).getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
-  const pricePerNight = booking?.isAC ? room.priceAC : room.priceNonAC;
+  const basePricePerNight = booking?.pricePerNightSelling ?? (booking?.isAC ? room.priceAC : room.priceNonAC);
+  const extraChargePerNight = booking?.extraBeddingIncluded ? 0 : (booking?.extraBeddingChargePerNight ?? 0);
+  const pricePerNight = basePricePerNight + extraChargePerNight;
   const roomCharge = pricePerNight * nights;
   const grandTotal = roomCharge + itemsTotal;
 
@@ -307,8 +309,26 @@ export const RoomDetailView: React.FC<{
                 <span className="text-sm">{booking.adults} {t('adults')}, {booking.children} {t('children')}</span>
               </div>
               <div className="flex items-center gap-2">
+                <Users size={14} className="text-stone-400" />
+                <span className="text-sm">{t('extraGuests')}: {booking.extraGuests ?? 0}</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <Clock size={14} className="text-stone-400" />
                 <span className="text-sm">{new Date(booking.checkIn).toLocaleDateString()} · {duration}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <IndianRupee size={14} className="text-stone-400" />
+                <span className="text-sm">{t('roomPriceMrp')}: ₹{(booking.pricePerNightMrp ?? (booking.isAC ? room.priceAC : room.priceNonAC)).toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <IndianRupee size={14} className="text-stone-400" />
+                <span className="text-sm">{t('roomPriceSelling')}: ₹{(booking.pricePerNightSelling ?? (booking.isAC ? room.priceAC : room.priceNonAC)).toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <IndianRupee size={14} className="text-stone-400" />
+                <span className="text-sm">
+                  {t('extraBedding')}: {booking.extraBeddingIncluded ? t('included') : `₹${(booking.extraBeddingChargePerNight ?? 0).toLocaleString('en-IN')}/${t('night')}`}
+                </span>
               </div>
             </div>
           </div>

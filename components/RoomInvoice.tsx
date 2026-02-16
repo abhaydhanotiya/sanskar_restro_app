@@ -193,8 +193,15 @@ export const RoomInvoice: React.FC<{
   const checkIn = new Date(booking.checkIn);
   const checkOut = booking.checkOut ? new Date(booking.checkOut) : new Date();
   const nights = Math.max(1, Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)));
-  const pricePerNight = booking.isAC ? room.priceAC : room.priceNonAC;
-  const roomTotal = pricePerNight * nights;
+  const pricePerNightMrp = booking.pricePerNightMrp ?? (booking.isAC ? room.priceAC : room.priceNonAC);
+  const basePricePerNightSelling = booking.pricePerNightSelling ?? pricePerNightMrp;
+  const basePricePerNightBill = booking.pricePerNightBill ?? basePricePerNightSelling;
+  const extraChargePerNight = booking.extraBeddingIncluded ? 0 : (booking.extraBeddingChargePerNight ?? 0);
+  const pricePerNightSelling = basePricePerNightSelling + extraChargePerNight;
+  const pricePerNightBill = basePricePerNightBill + extraChargePerNight;
+  const roomTotalBill = pricePerNightBill * nights;
+  const roomTotalSelling = pricePerNightSelling * nights;
+  const roomUpliftTotal = Math.max(0, roomTotalBill - roomTotalSelling);
 
   const items = booking.items ?? [];
 
@@ -205,9 +212,18 @@ export const RoomInvoice: React.FC<{
   lineItems.push({
     description: `Room ${room.roomNumber} — ${booking.isAC ? 'AC' : 'Non-AC'} (${nights} ${nights === 1 ? 'Night' : 'Nights'})`,
     qty: nights,
-    unitPrice: pricePerNight,
-    total: roomTotal,
+    unitPrice: pricePerNightBill,
+    total: roomTotalBill,
   });
+
+  if (roomTotalBill !== roomTotalSelling) {
+    lineItems.push({
+      description: t('roomRateAdjustment'),
+      qty: 1,
+      unitPrice: roomTotalSelling - roomTotalBill,
+      total: roomTotalSelling - roomTotalBill,
+    });
+  }
 
   items.forEach(item => {
     lineItems.push({
@@ -218,10 +234,11 @@ export const RoomInvoice: React.FC<{
     });
   });
 
-  const subtotal = lineItems.reduce((s, i) => s + i.total, 0);
-  // GST only on room charges + food items; packaged amenities already include GST
-  const amenityTotal = items.filter(i => i.category === 'AMENITY').reduce((s, i) => s + i.price * i.quantity, 0);
-  const taxableAmount = subtotal - amenityTotal;
+  const itemsFoodTotal = items.filter(i => i.category === 'FOOD').reduce((s, i) => s + i.price * i.quantity, 0);
+  const itemsAmenityTotal = items.filter(i => i.category === 'AMENITY').reduce((s, i) => s + i.price * i.quantity, 0);
+  const subtotal = roomTotalSelling + itemsFoodTotal + itemsAmenityTotal;
+  // GST only on room uplift + food items; packaged amenities already include GST
+  const taxableAmount = roomUpliftTotal + itemsFoodTotal;
   const gstRate = gstEnabled ? GST_RATE : 0;
   const cgst = Math.round(taxableAmount * gstRate) / 100;
   const sgst = Math.round(taxableAmount * gstRate) / 100;
