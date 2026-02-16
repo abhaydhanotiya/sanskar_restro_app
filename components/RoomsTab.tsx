@@ -534,11 +534,14 @@ export const RoomsTab: React.FC = () => {
                 const foodTotal = (booking.items ?? []).filter(i => i.category === 'FOOD').reduce((s, i) => s + i.price * i.quantity, 0);
                 const uplift = Math.max(0, roomBill - roomSelling);
                 const isGst = booking.gstEnabled !== false;
+                const gstOnSelling = isGst ? Math.round(roomSelling * 5) / 100 : 0;
+                const gstOnBill = isGst ? Math.round(roomBill * 5) / 100 : 0;
                 const gstOnUplift = isGst ? Math.round(uplift * 5) / 100 : 0;
                 const gstOnFood = isGst ? Math.round(foodTotal * 5) / 100 : 0;
                 const itemsTotal = (booking.items ?? []).reduce((s, i) => s + i.price * i.quantity, 0);
-                const actualReceived = roomSelling + itemsTotal + gstOnUplift + gstOnFood;
+                const actualReceived = roomSelling + gstOnSelling + itemsTotal + gstOnUplift + gstOnFood;
                 const hasBillDiff = baseBill !== baseSelling;
+                const displayAmount = roomBill + gstOnBill;
 
                 return (
                   <div
@@ -557,7 +560,7 @@ export const RoomsTab: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-brown-dark">₹{roomBill.toLocaleString('en-IN')}</p>
+                        <p className="text-sm font-bold text-brown-dark">₹{displayAmount.toLocaleString('en-IN')}</p>
                         <p className="text-[10px] text-stone-400">{nights} {nights === 1 ? t('night') : t('nights')}</p>
                         {hasBillDiff && (
                           <p className="text-[10px] font-semibold text-green-600">{t('youReceive')}: ₹{actualReceived.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>

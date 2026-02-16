@@ -256,9 +256,10 @@ export const RoomDetailView: React.FC<{
   const foodTotal = items.filter(i => i.category === 'FOOD').reduce((s, i) => s + i.price * i.quantity, 0);
   const uplift = Math.max(0, roomChargeBill - roomCharge);
   const isGst = booking?.gstEnabled !== false;
+  const gstOnSelling = isGst ? Math.round(roomCharge * 5) / 100 : 0;
   const gstOnUplift = isGst ? Math.round(uplift * 5) / 100 : 0;
   const gstOnFood = isGst ? Math.round(foodTotal * 5) / 100 : 0;
-  const actualReceived = roomCharge + itemsTotal + gstOnUplift + gstOnFood;
+  const actualReceived = roomCharge + gstOnSelling + itemsTotal + gstOnUplift + gstOnFood;
 
   // Time since check-in
   const duration = booking

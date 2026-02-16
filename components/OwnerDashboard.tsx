@@ -712,11 +712,14 @@ const handleRefresh = async () => {
                         const foodTotal = (booking.items ?? []).filter(i => i.category === 'FOOD').reduce((s, i) => s + i.price * i.quantity, 0);
                         const uplift = Math.max(0, roomBill - roomSelling);
                         const isGst = booking.gstEnabled !== false;
+                        const gstOnSelling = isGst ? Math.round(roomSelling * 5) / 100 : 0;
+                        const gstOnBill = isGst ? Math.round(roomBill * 5) / 100 : 0;
                         const gstOnUplift = isGst ? Math.round(uplift * 5) / 100 : 0;
                         const gstOnFood = isGst ? Math.round(foodTotal * 5) / 100 : 0;
                         const itemsTotal = (booking.items ?? []).reduce((s, i) => s + i.price * i.quantity, 0);
-                        const actualReceived = roomSelling + itemsTotal + gstOnUplift + gstOnFood;
+                        const actualReceived = roomSelling + gstOnSelling + itemsTotal + gstOnUplift + gstOnFood;
                         const hasBillDiff = baseBill !== baseSelling;
+                        const displayAmount = roomBill + gstOnBill;
                         return (
                             <div key={booking.id} className="bg-white rounded-xl p-4 border border-stone-100 shadow-sm flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                                 <div>
@@ -736,7 +739,7 @@ const handleRefresh = async () => {
                                     </div>
                                 </div>
                                 <div className="text-right flex sm:flex-col justify-between items-end">
-                                    <p className="font-bold text-lg text-brown-dark">₹{roomBill.toLocaleString('en-IN')}</p>
+                                    <p className="font-bold text-lg text-brown-dark">₹{displayAmount.toLocaleString('en-IN')}</p>
                                     {hasBillDiff && (
                                         <p className="text-[10px] font-semibold text-green-600">{t('youReceive')}: ₹{actualReceived.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                                     )}
