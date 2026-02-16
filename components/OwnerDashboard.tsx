@@ -6,8 +6,12 @@ import { LayoutDashboard, Users, History, TrendingUp, IndianRupee, ShoppingBag, 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTables } from '@/contexts/TablesContext';
 import { useOwnerData } from '@/hooks/useOwnerData';
+import { useRoomHistory } from '@/hooks/useRoomHistory';
 import { useToast } from '@/contexts/ToastContext';
 import { OrderItem, OrderStatus, Transaction, Room, MenuItem } from '@/types';
+import { RoomCard } from '@/components/RoomCard';
+import { RoomInvoice, InvoiceData } from '@/components/RoomInvoice';
+import { RoomDetailView } from '@/components/RoomDetailView';
 import { apiClient } from '@/lib/api-client';
 
 interface OwnerDashboardProps {
@@ -549,12 +553,25 @@ const handleRefresh = async () => {
 
   // ==================== ROOMS MANAGEMENT TAB ====================
   const RoomsManageTab = () => {
+    const [subTab, setSubTab] = useState<'overview' | 'manage' | 'history'>('overview');
+    const { history: roomHistory, loading: historyLoading, loadHistory } = useRoomHistory();
+    const [historyLoaded, setHistoryLoaded] = useState(false);
+    const [selectedOverviewRoom, setSelectedOverviewRoom] = useState<Room | null>(null);
+
+    // Existing management state
     const [editingRoom, setEditingRoom] = useState<Room | null>(null);
     const [showAddRoom, setShowAddRoom] = useState(false);
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState({
       roomNumber: '', type: 'DELUXE' as string, floor: 1, capacity: 2, priceNonAC: 0, priceAC: 0,
     });
+
+    useEffect(() => {
+        if (subTab === 'history' && !historyLoaded) {
+            loadHistory();
+            setHistoryLoaded(true);
+        }
+    }, [subTab]);
 
     const startEdit = (room: Room) => {
       setEditingRoom(room);
@@ -617,137 +634,227 @@ const handleRefresh = async () => {
     const isEditing = editingRoom !== null || showAddRoom;
 
     return (
-      <div className="space-y-4 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+      <div className="space-y-6 animate-fade-in pb-10">
+        {/* Header & Sub-tabs */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h3 className="font-bold text-lg text-brown-dark flex items-center gap-2">
               <BedDouble size={20} className="text-orange-600" />
               {t('manageRooms')}
             </h3>
-            <p className="text-xs text-stone-400">{rooms.length} {t('totalRooms').toLowerCase()}</p>
-          </div>
-          <button
-            onClick={startAdd}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-orange-600 text-white rounded-xl text-sm font-bold hover:bg-orange-700 active:scale-95 transition-all shadow-sm"
-          >
-            <Plus size={16} /> {t('addRoom')}
-          </button>
+            <div className="bg-stone-100 p-1 rounded-xl flex">
+                <button 
+                    onClick={() => setSubTab('overview')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${subTab === 'overview' ? 'bg-white shadow text-brown-dark' : 'text-stone-500 hover:text-stone-700'}`}
+                >Overview</button>
+                <button 
+                    onClick={() => setSubTab('manage')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${subTab === 'manage' ? 'bg-white shadow text-brown-dark' : 'text-stone-500 hover:text-stone-700'}`}
+                >Inventory</button>
+                <button 
+                    onClick={() => setSubTab('history')}
+                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${subTab === 'history' ? 'bg-white shadow text-brown-dark' : 'text-stone-500 hover:text-stone-700'}`}
+                >History</button>
+            </div>
         </div>
 
-        {/* Edit / Add Form */}
-        {isEditing && (
-          <div className="bg-white rounded-2xl border border-orange-200 shadow-sm p-5 space-y-4 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <h4 className="font-bold text-brown-dark">{editingRoom ? t('editRoom') : t('addRoom')}</h4>
-              <button onClick={() => { setEditingRoom(null); setShowAddRoom(false); }} className="p-1.5 rounded-lg hover:bg-stone-100">
-                <X size={18} className="text-stone-400" />
-              </button>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block">{t('roomNumber')}</label>
-                <input value={form.roomNumber} onChange={e => setForm(p => ({ ...p, roomNumber: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-300"
-                  placeholder="e.g. 101" />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block">{t('roomType')}</label>
-                <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-300 appearance-none bg-white">
-                  <option value="DELUXE">{t('roomDeluxe')}</option>
-                  <option value="PREMIUM_SUITE">{t('roomPremiumSuite')}</option>
-                  <option value="ROYAL_SUITE">{t('roomRoyalSuite')}</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block">{t('floor')}</label>
-                <input type="number" min={0} value={form.floor} onChange={e => setForm(p => ({ ...p, floor: parseInt(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-300" />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block">{t('roomCapacity')}</label>
-                <input type="number" min={1} value={form.capacity} onChange={e => setForm(p => ({ ...p, capacity: parseInt(e.target.value) || 1 }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-300" />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block flex items-center gap-1"><Snowflake size={12} className="text-blue-500" /> {t('priceAC')}</label>
-                <input type="number" min={0} value={form.priceAC} onChange={e => setForm(p => ({ ...p, priceAC: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="₹" />
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block flex items-center gap-1"><Flame size={12} className="text-orange-500" /> {t('priceNonAC')}</label>
-                <input type="number" min={0} value={form.priceNonAC} onChange={e => setForm(p => ({ ...p, priceNonAC: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-300" placeholder="₹" />
-              </div>
-            </div>
-            <button onClick={handleSave} disabled={saving}
-              className="w-full py-3 bg-orange-600 text-white font-bold rounded-xl text-sm hover:bg-orange-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-              <Save size={16} /> {saving ? '...' : t('saveChanges')}
-            </button>
-          </div>
+        {/* OVERVIEW TAB */}
+        {subTab === 'overview' && (
+            <>
+                {loadingRooms ? (
+                    <div className="text-center py-16 text-stone-400"><RefreshCw size={24} className="mx-auto animate-spin mb-2" />Loading overview...</div>
+                ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {rooms.map(room => (
+                            <RoomCard key={room.id} room={room} onClick={setSelectedOverviewRoom} />
+                        ))}
+                        {rooms.length === 0 && <p className="col-span-full text-center text-stone-400 py-10">No rooms found.</p>}
+                    </div>
+                )}
+                 {selectedOverviewRoom && (
+                    <RoomDetailView
+                        room={selectedOverviewRoom}
+                        onBack={() => setSelectedOverviewRoom(null)}
+                        onCheckout={() => {
+                            loadRooms();
+                            setHistoryLoaded(false); // Reload history next time tab is opened
+                            setSelectedOverviewRoom(null);
+                        }}
+                    />
+                )}
+            </>
         )}
 
-        {/* Rooms by Floor */}
-        {loadingRooms ? (
-          <div className="text-center py-16 text-stone-400"><RefreshCw size={24} className="mx-auto animate-spin mb-2" />Loading rooms...</div>
-        ) : (
-          Object.entries(floorGroups).sort(([a], [b]) => Number(a) - Number(b)).map(([floor, floorRooms]) => (
-            <div key={floor} className="space-y-2">
-              <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">
-                {Number(floor) === 0 ? t('groundFloor') : `${t('floor')} ${floor}`} · {floorRooms.length} rooms
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {floorRooms.map(room => {
-                  const isOccupied = room.status === 'OCCUPIED';
-                  const isSelected = editingRoom?.id === room.id;
-                  return (
-                    <div key={room.id}
-                      className={`bg-white rounded-xl border p-4 transition-all ${isSelected ? 'border-orange-400 ring-2 ring-orange-200' : 'border-stone-100 hover:border-stone-200'}`}>
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
-                            isOccupied ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
-                          }`}>
-                            {room.roomNumber}
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-brown-dark text-sm">{t('room')} {room.roomNumber}</h4>
-                            <p className="text-[10px] text-stone-400 uppercase tracking-wider">
-                              {room.type.replace('_', ' ')} · {room.capacity} {t('guests')}
-                            </p>
-                          </div>
-                        </div>
-                        <div className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
-                          isOccupied ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'
-                        }`}>
-                          {isOccupied ? t('roomOccupied') : t('roomAvailable')}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-stone-500 mb-3">
-                        <span className="flex items-center gap-1"><Snowflake size={12} className="text-blue-500" /> ₹{room.priceAC}</span>
-                        <span className="flex items-center gap-1"><Flame size={12} className="text-orange-400" /> ₹{room.priceNonAC}</span>
-                        <span className="text-stone-300">|</span>
-                        <span>{t('floor')} {room.floor}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => startEdit(room)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-stone-100 text-stone-600 text-xs font-bold hover:bg-stone-200 active:scale-95 transition-all">
-                          <Pencil size={13} /> {t('editRoom')}
-                        </button>
-                        {!isOccupied && (
-                          <button onClick={() => handleDelete(room)}
-                            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 text-red-500 text-xs font-bold hover:bg-red-100 active:scale-95 transition-all">
-                            <Trash2 size={13} />
-                          </button>
-                        )}
-                      </div>
+        {/* HISTORY TAB */}
+        {subTab === 'history' && (
+            historyLoading ? (
+                <div className="text-center py-16 text-stone-400"><RefreshCw size={24} className="mx-auto animate-spin mb-2" />Loading history...</div>
+            ) : roomHistory.length === 0 ? (
+                <div className="text-center py-16 text-stone-400 flex flex-col items-center">
+                    <History size={32} className="mb-2 opacity-50"/>
+                    No booking history found
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {roomHistory.map(booking => {
+                        const checkIn = new Date(booking.checkIn);
+                        const nights = booking.checkOut ? Math.max(1, Math.ceil((new Date(booking.checkOut).getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))) : 1;
+                        return (
+                            <div key={booking.id} className="bg-white rounded-xl p-4 border border-stone-100 shadow-sm flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-xs">
+                                            {booking.room ? booking.room.roomNumber : `#${booking.roomId}`}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-brown-dark text-sm">{booking.guestName}</p>
+                                            <p className="text-[10px] text-stone-400">{booking.guestPhone || 'No phone'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-[10px] text-stone-400 font-medium">
+                                        <span className="flex items-center gap-1"><Calendar size={10}/> {checkIn.toLocaleDateString()}</span>
+                                        {booking.checkOut && <span>→ {new Date(booking.checkOut).toLocaleDateString()}</span>}
+                                        <span className="bg-stone-50 px-1.5 py-0.5 rounded border border-stone-100">{nights} nights</span>
+                                    </div>
+                                </div>
+                                <div className="text-right flex sm:flex-col justify-between items-end">
+                                    <p className="font-bold text-lg text-brown-dark">₹{booking.totalAmount.toLocaleString()}</p>
+                                    <p className="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full inline-block">
+                                        {booking.checkOut ? 'Completed' : 'Active'}
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )
+        )}
+
+        {/* MANAGE INVENTORY TAB */}
+        {subTab === 'manage' && (
+            <>
+                <div className="flex justify-end mb-4">
+                     <button
+                        onClick={startAdd}
+                        className="flex items-center gap-1.5 px-4 py-2.5 bg-orange-600 text-white rounded-xl text-sm font-bold hover:bg-orange-700 active:scale-95 transition-all shadow-sm"
+                    >
+                        <Plus size={16} /> {t('addRoom')}
+                    </button>
+                </div>
+
+                {isEditing && (
+                <div className="bg-white rounded-2xl border border-orange-200 shadow-sm p-5 space-y-4 animate-fade-in mb-6">
+                    <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-brown-dark">{editingRoom ? t('editRoom') : t('addRoom')}</h4>
+                    <button onClick={() => { setEditingRoom(null); setShowAddRoom(false); }} className="p-1.5 rounded-lg hover:bg-stone-100">
+                        <X size={18} className="text-stone-400" />
+                    </button>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block">{t('roomNumber')}</label>
+                        <input value={form.roomNumber} onChange={e => setForm(p => ({ ...p, roomNumber: e.target.value }))}
+                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-300"
+                        placeholder="e.g. 101" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block">{t('roomType')}</label>
+                        <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}
+                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-300 appearance-none bg-white">
+                        <option value="DELUXE">{t('roomDeluxe')}</option>
+                        <option value="PREMIUM_SUITE">{t('roomPremiumSuite')}</option>
+                        <option value="ROYAL_SUITE">{t('roomRoyalSuite')}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block">{t('floor')}</label>
+                        <input type="number" min={0} value={form.floor} onChange={e => setForm(p => ({ ...p, floor: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-300" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block">{t('roomCapacity')}</label>
+                        <input type="number" min={1} value={form.capacity} onChange={e => setForm(p => ({ ...p, capacity: parseInt(e.target.value) || 1 }))}
+                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-300" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block flex items-center gap-1"><Snowflake size={12} className="text-blue-500" /> {t('priceAC')}</label>
+                        <input type="number" min={0} value={form.priceAC} onChange={e => setForm(p => ({ ...p, priceAC: parseFloat(e.target.value) || 0 }))}
+                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-300" placeholder="₹" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1 block flex items-center gap-1"><Flame size={12} className="text-orange-500" /> {t('priceNonAC')}</label>
+                        <input type="number" min={0} value={form.priceNonAC} onChange={e => setForm(p => ({ ...p, priceNonAC: parseFloat(e.target.value) || 0 }))}
+                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-300" placeholder="₹" />
+                    </div>
+                    </div>
+                    <button onClick={handleSave} disabled={saving}
+                    className="w-full py-3 bg-orange-600 text-white font-bold rounded-xl text-sm hover:bg-orange-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                    <Save size={16} /> {saving ? '...' : t('saveChanges')}
+                    </button>
+                </div>
+                )}
+
+                {/* Rooms by Floor */}
+                {loadingRooms ? (
+                <div className="text-center py-16 text-stone-400"><RefreshCw size={24} className="mx-auto animate-spin mb-2" />Loading rooms...</div>
+                ) : (
+                Object.entries(floorGroups).sort(([a], [b]) => Number(a) - Number(b)).map(([floor, floorRooms]) => (
+                    <div key={floor} className="space-y-2 mb-6">
+                    <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest px-1">
+                        {Number(floor) === 0 ? t('groundFloor') : `${t('floor')} ${floor}`} · {floorRooms.length} rooms
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {floorRooms.map(room => {
+                        const isOccupied = room.status === 'OCCUPIED';
+                        const isSelected = editingRoom?.id === room.id;
+                        return (
+                            <div key={room.id}
+                            className={`bg-white rounded-xl border p-4 transition-all ${isSelected ? 'border-orange-400 ring-2 ring-orange-200' : 'border-stone-100 hover:border-stone-200'}`}>
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                                    isOccupied ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                                }`}>
+                                    {room.roomNumber}
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-brown-dark text-sm">{t('room')} {room.roomNumber}</h4>
+                                    <p className="text-[10px] text-stone-400 uppercase tracking-wider">
+                                    {room.type.replace('_', ' ')} · {room.capacity} {t('guests')}
+                                    </p>
+                                </div>
+                                </div>
+                                <div className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
+                                isOccupied ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'
+                                }`}>
+                                {isOccupied ? t('roomOccupied') : t('roomAvailable')}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-stone-500 mb-3">
+                                <span className="flex items-center gap-1"><Snowflake size={12} className="text-blue-500" /> ₹{room.priceAC}</span>
+                                <span className="flex items-center gap-1"><Flame size={12} className="text-orange-400" /> ₹{room.priceNonAC}</span>
+                                <span className="text-stone-300">|</span>
+                                <span>{t('floor')} {room.floor}</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => startEdit(room)}
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-stone-100 text-stone-600 text-xs font-bold hover:bg-stone-200 active:scale-95 transition-all">
+                                <Pencil size={13} /> {t('editRoom')}
+                                </button>
+                                {!isOccupied && (
+                                <button onClick={() => handleDelete(room)}
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 text-red-500 text-xs font-bold hover:bg-red-100 active:scale-95 transition-all">
+                                    <Trash2 size={13} />
+                                </button>
+                                )}
+                            </div>
+                            </div>
+                        );
+                        })}
+                    </div>
+                    </div>
+                ))
+                )}
+            </>
         )}
       </div>
     );

@@ -82,6 +82,10 @@ class ApiClient {
     return this.request('/rooms');
   }
 
+  async getRoomHistory() {
+    return this.request('/rooms/history');
+  }
+
   async updateRoom(id: number, updates: any) {
     return this.request(`/rooms/${id}`, {
       method: 'PATCH',

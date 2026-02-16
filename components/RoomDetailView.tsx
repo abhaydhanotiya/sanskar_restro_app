@@ -149,7 +149,12 @@ const AddItemModal: React.FC<{
 };
 
 // --- Main Detail View ---
-export const RoomDetailView: React.FC<{ room: Room; onBack: () => void }> = ({ room: initialRoom, onBack }) => {
+export const RoomDetailView: React.FC<{ 
+  room: Room; 
+  onBack: () => void;
+  onUpdate?: () => void;
+  onCheckout?: () => void;
+}> = ({ room: initialRoom, onBack, onUpdate, onCheckout }) => {
   const { t } = useLanguage();
   const { showToast } = useToast();
   const [room, setRoom] = useState<Room>(initialRoom);
@@ -204,6 +209,7 @@ export const RoomDetailView: React.FC<{ room: Room; onBack: () => void }> = ({ r
       });
       const checkedOutBooking = await res.json();
       showToast(t('checkoutSuccess'), 'success');
+      if (onCheckout) onCheckout();
       // Show invoice after checkout
       setInvoiceData({
         booking: { ...checkedOutBooking, items },
