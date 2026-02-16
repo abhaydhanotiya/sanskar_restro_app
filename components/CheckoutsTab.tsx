@@ -141,7 +141,7 @@ export const CheckoutsTab: React.FC = () => {
   };
 
   return (
-    <div className="p-4 bg-bg-light min-h-screen pb-24">
+    <div className="p-4 bg-bg-light min-h-dvh pb-24">
       {/* View Toggle */}
       <div className="flex bg-white p-1.5 rounded-xl shadow-sm border border-stone-200 mb-6 relative">
          <button 

@@ -62,7 +62,7 @@ export const TablesTab: React.FC = () => {
   }
 
   return (
-    <div className="p-4 pb-24 min-h-screen bg-bg-light">
+    <div className="p-4 pb-24 min-h-dvh bg-bg-light">
       
       {/* Header */}
       <div className="flex justify-between items-end mb-6">

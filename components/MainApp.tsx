@@ -76,7 +76,7 @@ const ServerApp: React.FC<{ userName: string; userId: number; userRole: UserRole
   };
 
   return (
-    <div className="min-h-screen bg-bg-light text-brown-dark font-sans">
+    <div className="min-h-dvh bg-bg-light text-brown-dark font-sans">
       <Header userName={userName} isOwnerView={isOwnerView} onBackToDashboard={onBackToDashboard} />
       <main className="pt-16 animate-fade-in pb-20">
         {renderContent()}

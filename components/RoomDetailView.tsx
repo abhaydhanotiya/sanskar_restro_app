@@ -249,6 +249,17 @@ export const RoomDetailView: React.FC<{
   const roomCharge = pricePerNight * nights;
   const grandTotal = roomCharge + itemsTotal;
 
+  // Bill price & actual received calculation
+  const baseBillPerNight = booking?.pricePerNightBill ?? basePricePerNight;
+  const billPerNight = baseBillPerNight + extraChargePerNight;
+  const roomChargeBill = billPerNight * nights;
+  const foodTotal = items.filter(i => i.category === 'FOOD').reduce((s, i) => s + i.price * i.quantity, 0);
+  const uplift = Math.max(0, roomChargeBill - roomCharge);
+  const isGst = booking?.gstEnabled !== false;
+  const gstOnUplift = isGst ? Math.round(uplift * 5) / 100 : 0;
+  const gstOnFood = isGst ? Math.round(foodTotal * 5) / 100 : 0;
+  const actualReceived = roomCharge + itemsTotal + gstOnUplift + gstOnFood;
+
   // Time since check-in
   const duration = booking
     ? (() => {
@@ -260,7 +271,7 @@ export const RoomDetailView: React.FC<{
     : '';
 
   return (
-    <div className="min-h-screen bg-bg-light pb-24">
+    <div className="min-h-dvh bg-bg-light pb-24">
       {/* Top Bar */}
       <div className="sticky top-16 z-30 bg-white/90 backdrop-blur-md border-b border-stone-100 px-4 py-3 flex items-center gap-3">
         <button onClick={onBack} className="p-2 rounded-xl hover:bg-stone-100 transition-colors">
@@ -356,6 +367,35 @@ export const RoomDetailView: React.FC<{
                 <span className="text-peach-dark">₹{grandTotal.toLocaleString('en-IN')}</span>
               </div>
             </div>
+
+            {/* Actual Received Breakdown */}
+            {booking?.pricePerNightBill && booking.pricePerNightBill !== basePricePerNight && (
+              <div className="mt-3 pt-3 border-t border-dashed border-stone-200 space-y-2 text-sm">
+                <h4 className="text-xs font-bold text-green-600 uppercase tracking-wider">{t('actualReceived')}</h4>
+                <div className="flex justify-between">
+                  <span className="text-stone-500">{t('roomPriceSelling')} ({nights} {nights === 1 ? t('night') : t('nights')})</span>
+                  <span className="font-semibold">₹{roomCharge.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stone-500">{t('roomPriceBill')} ({nights} {nights === 1 ? t('night') : t('nights')})</span>
+                  <span className="font-semibold text-stone-400">₹{roomChargeBill.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stone-500">{t('gstOnUplift')} (₹{uplift.toLocaleString('en-IN')})</span>
+                  <span className="font-semibold">₹{gstOnUplift.toFixed(2)}</span>
+                </div>
+                {foodTotal > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">{t('gstOnFood')} (₹{foodTotal.toLocaleString('en-IN')})</span>
+                    <span className="font-semibold">₹{gstOnFood.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-base pt-1 border-t border-stone-100">
+                  <span className="text-green-700">{t('youReceive')}</span>
+                  <span className="text-green-700">₹{actualReceived.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

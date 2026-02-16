@@ -255,10 +255,10 @@ export const RoomsTab: React.FC = () => {
   const [showBillingForm, setShowBillingForm] = useState(false);
   const [pendingHistoryBooking, setPendingHistoryBooking] = useState<RoomBooking | null>(null);
 
-  // Force body to not scroll when modal is open
+  // Force body to not scroll when modal is open (NOT for RoomDetailView which needs body scroll)
   const [modalOpen, setModalOpen] = useState(false);
   useEffect(() => {
-    if (!!selectedRoom || !!checkInRoom || !!invoiceData) {
+    if (!!checkInRoom || !!invoiceData) {
       document.body.style.overflow = 'hidden';
       setModalOpen(true);
     } else {
@@ -266,7 +266,7 @@ export const RoomsTab: React.FC = () => {
       setModalOpen(false);
     }
     return () => { document.body.style.overflow = ''; };
-  }, [selectedRoom, checkInRoom, invoiceData]);
+  }, [checkInRoom, invoiceData]);
 
   const fetchRooms = useCallback(async () => {
     try {
@@ -420,7 +420,7 @@ export const RoomsTab: React.FC = () => {
   }
 
   return (
-    <div className="p-4 pb-24 min-h-screen bg-bg-light">
+    <div className="p-4 pb-24 min-h-dvh bg-bg-light">
       {/* Header */}
       <div className="flex justify-between items-end mb-4">
         <h2 className="text-2xl font-bold text-brown-dark">{t('rooms')}</h2>
@@ -523,6 +523,23 @@ export const RoomsTab: React.FC = () => {
                 const room = booking.room;
                 const roomLabel = room ? `${room.roomNumber}` : `#${booking.roomId}`;
 
+                // Actual received calculation
+                const baseSelling = booking.pricePerNightSelling ?? (booking.isAC ? (room?.priceAC ?? 0) : (room?.priceNonAC ?? 0));
+                const baseBill = booking.pricePerNightBill ?? baseSelling;
+                const extraCharge = booking.extraBeddingIncluded ? 0 : (booking.extraBeddingChargePerNight ?? 0);
+                const sellingPerNight = baseSelling + extraCharge;
+                const billPerNight = baseBill + extraCharge;
+                const roomSelling = sellingPerNight * nights;
+                const roomBill = billPerNight * nights;
+                const foodTotal = (booking.items ?? []).filter(i => i.category === 'FOOD').reduce((s, i) => s + i.price * i.quantity, 0);
+                const uplift = Math.max(0, roomBill - roomSelling);
+                const isGst = booking.gstEnabled !== false;
+                const gstOnUplift = isGst ? Math.round(uplift * 5) / 100 : 0;
+                const gstOnFood = isGst ? Math.round(foodTotal * 5) / 100 : 0;
+                const itemsTotal = (booking.items ?? []).reduce((s, i) => s + i.price * i.quantity, 0);
+                const actualReceived = roomSelling + itemsTotal + gstOnUplift + gstOnFood;
+                const hasBillDiff = baseBill !== baseSelling;
+
                 return (
                   <div
                     key={booking.id}
@@ -540,8 +557,11 @@ export const RoomsTab: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-brown-dark">₹{booking.totalAmount.toLocaleString('en-IN')}</p>
+                        <p className="text-sm font-bold text-brown-dark">₹{roomBill.toLocaleString('en-IN')}</p>
                         <p className="text-[10px] text-stone-400">{nights} {nights === 1 ? t('night') : t('nights')}</p>
+                        {hasBillDiff && (
+                          <p className="text-[10px] font-semibold text-green-600">{t('youReceive')}: ₹{actualReceived.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between text-[10px] text-stone-400">

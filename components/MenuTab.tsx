@@ -85,7 +85,7 @@ export const MenuTab: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-72px)] bg-stone-50">
+    <div className="flex flex-col h-[calc(100dvh-136px)] bg-stone-50">
       {/* Sticky Header */}
       <div className="bg-white px-4 py-3 shadow-sm z-10 sticky top-16">
         <div className="relative mb-4">

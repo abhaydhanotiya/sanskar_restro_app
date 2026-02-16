@@ -63,7 +63,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-bg-light flex flex-col items-center justify-center p-6 animate-fade-in">
+    <div className="min-h-dvh bg-bg-light flex flex-col items-center justify-center p-6 animate-fade-in">
       {/* App Logo & Title */}
       <div className="flex flex-col items-center mb-10">
         <Image src="/logo.png" alt="Sanskar Palace" width={160} height={120} className="mb-2 drop-shadow-lg" priority />

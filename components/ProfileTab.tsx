@@ -148,7 +148,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ userName, userId, loginT
   })();
 
   return (
-    <div className="p-4 bg-bg-light min-h-screen pb-24">
+    <div className="p-4 bg-bg-light min-h-dvh pb-24">
       {/* Header Profile */}
       <div className="bg-brown text-white rounded-2xl p-6 shadow-md mb-6 flex items-center gap-4">
         <div className="w-16 h-16 rounded-full bg-peach-light text-brown-dark flex items-center justify-center text-xl font-bold border-2 border-white">

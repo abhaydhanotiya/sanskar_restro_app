@@ -38,7 +38,7 @@ export const KitchenTab: React.FC = () => {
   };
 
   return (
-    <div className="p-4 bg-bg-light min-h-screen pb-24 space-y-8">
+    <div className="p-4 bg-bg-light min-h-dvh pb-24 space-y-8">
       
       {/* SECTION 1: PREPARING (Chef View) */}
       <div>

@@ -671,15 +671,17 @@ const handleRefresh = async () => {
                     </div>
                 )}
                  {selectedOverviewRoom && (
-                    <RoomDetailView
-                        room={selectedOverviewRoom}
-                        onBack={() => setSelectedOverviewRoom(null)}
-                        onCheckout={() => {
-                            loadRooms();
-                            setHistoryLoaded(false); // Reload history next time tab is opened
-                            setSelectedOverviewRoom(null);
-                        }}
-                    />
+                    <div className="fixed inset-0 z-[55] bg-bg-light overflow-y-auto">
+                        <RoomDetailView
+                            room={selectedOverviewRoom}
+                            onBack={() => setSelectedOverviewRoom(null)}
+                            onCheckout={() => {
+                                loadRooms();
+                                setHistoryLoaded(false);
+                                setSelectedOverviewRoom(null);
+                            }}
+                        />
+                    </div>
                 )}
             </>
         )}
@@ -698,6 +700,23 @@ const handleRefresh = async () => {
                     {roomHistory.map(booking => {
                         const checkIn = new Date(booking.checkIn);
                         const nights = booking.checkOut ? Math.max(1, Math.ceil((new Date(booking.checkOut).getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))) : 1;
+                        const room = booking.room;
+                        // Actual received calculation
+                        const baseSelling = booking.pricePerNightSelling ?? (booking.isAC ? (room?.priceAC ?? 0) : (room?.priceNonAC ?? 0));
+                        const baseBill = booking.pricePerNightBill ?? baseSelling;
+                        const extraCharge = booking.extraBeddingIncluded ? 0 : (booking.extraBeddingChargePerNight ?? 0);
+                        const sellingPerNight = baseSelling + extraCharge;
+                        const billPerNight = baseBill + extraCharge;
+                        const roomSelling = sellingPerNight * nights;
+                        const roomBill = billPerNight * nights;
+                        const foodTotal = (booking.items ?? []).filter(i => i.category === 'FOOD').reduce((s, i) => s + i.price * i.quantity, 0);
+                        const uplift = Math.max(0, roomBill - roomSelling);
+                        const isGst = booking.gstEnabled !== false;
+                        const gstOnUplift = isGst ? Math.round(uplift * 5) / 100 : 0;
+                        const gstOnFood = isGst ? Math.round(foodTotal * 5) / 100 : 0;
+                        const itemsTotal = (booking.items ?? []).reduce((s, i) => s + i.price * i.quantity, 0);
+                        const actualReceived = roomSelling + itemsTotal + gstOnUplift + gstOnFood;
+                        const hasBillDiff = baseBill !== baseSelling;
                         return (
                             <div key={booking.id} className="bg-white rounded-xl p-4 border border-stone-100 shadow-sm flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                                 <div>
@@ -717,7 +736,10 @@ const handleRefresh = async () => {
                                     </div>
                                 </div>
                                 <div className="text-right flex sm:flex-col justify-between items-end">
-                                    <p className="font-bold text-lg text-brown-dark">₹{booking.totalAmount.toLocaleString()}</p>
+                                    <p className="font-bold text-lg text-brown-dark">₹{roomBill.toLocaleString('en-IN')}</p>
+                                    {hasBillDiff && (
+                                        <p className="text-[10px] font-semibold text-green-600">{t('youReceive')}: ₹{actualReceived.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                                    )}
                                     <p className="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full inline-block">
                                         {booking.checkOut ? 'Completed' : 'Active'}
                                     </p>
@@ -1084,7 +1106,7 @@ const handleRefresh = async () => {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 text-brown-dark font-sans pb-20">
+    <div className="min-h-dvh bg-stone-50 text-brown-dark font-sans pb-20">
       {/* Owner Header */}
       <header className="bg-brown-dark text-white p-4 sm:p-6 rounded-b-3xl shadow-lg mb-4 sm:mb-6 sticky top-0 z-50">
         <div className="flex justify-between items-center mb-3 sm:mb-6">

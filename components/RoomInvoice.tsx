@@ -184,6 +184,7 @@ export const RoomInvoice: React.FC<{
   data: InvoiceData;
   onClose: () => void;
 }> = ({ data, onClose }) => {
+  const { t } = useLanguage();
   const printRef = useRef<HTMLDivElement>(null);
   const { booking, room, customerDetails } = data;
   const gstEnabled = customerDetails?.gstEnabled ?? true;
@@ -209,21 +210,13 @@ export const RoomInvoice: React.FC<{
   type LineItem = { description: string; qty: number; unitPrice: number; total: number };
   const lineItems: LineItem[] = [];
 
+  // Show the Bill Price on the invoice (the price intended for the customer's bill)
   lineItems.push({
     description: `Room ${room.roomNumber} — ${booking.isAC ? 'AC' : 'Non-AC'} (${nights} ${nights === 1 ? 'Night' : 'Nights'})`,
     qty: nights,
     unitPrice: pricePerNightBill,
     total: roomTotalBill,
   });
-
-  if (roomTotalBill !== roomTotalSelling) {
-    lineItems.push({
-      description: t('roomRateAdjustment'),
-      qty: 1,
-      unitPrice: roomTotalSelling - roomTotalBill,
-      total: roomTotalSelling - roomTotalBill,
-    });
-  }
 
   items.forEach(item => {
     lineItems.push({
@@ -236,9 +229,10 @@ export const RoomInvoice: React.FC<{
 
   const itemsFoodTotal = items.filter(i => i.category === 'FOOD').reduce((s, i) => s + i.price * i.quantity, 0);
   const itemsAmenityTotal = items.filter(i => i.category === 'AMENITY').reduce((s, i) => s + i.price * i.quantity, 0);
-  const subtotal = roomTotalSelling + itemsFoodTotal + itemsAmenityTotal;
-  // GST only on room uplift + food items; packaged amenities already include GST
-  const taxableAmount = roomUpliftTotal + itemsFoodTotal;
+  const amenityTotal = itemsAmenityTotal;
+  const subtotal = roomTotalBill + itemsFoodTotal + itemsAmenityTotal;
+  // GST calculated on bill amount (room + food), excluding pre-taxed amenities
+  const taxableAmount = roomTotalBill + itemsFoodTotal;
   const gstRate = gstEnabled ? GST_RATE : 0;
   const cgst = Math.round(taxableAmount * gstRate) / 100;
   const sgst = Math.round(taxableAmount * gstRate) / 100;

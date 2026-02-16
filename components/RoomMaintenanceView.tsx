@@ -209,7 +209,7 @@ export const RoomMaintenanceView: React.FC<{ onBack: () => void }> = ({ onBack }
   };
 
   return (
-    <div className="min-h-screen bg-bg-light pb-24">
+    <div className="min-h-dvh bg-bg-light pb-24">
       {/* Top Bar */}
       <div className="sticky top-16 z-30 bg-white/90 backdrop-blur-md border-b border-stone-100 px-4 py-3 flex items-center gap-3">
         <button onClick={onBack} className="p-2 rounded-xl hover:bg-stone-100 transition-colors">
